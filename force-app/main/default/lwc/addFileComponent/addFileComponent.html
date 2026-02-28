@@ -1,0 +1,23 @@
+<template>
+    <lightning-card title="Box Files & Folders">
+
+        <template if:true={items}>
+            <template for:each={items} for:item="item">
+
+                <div key={item.id} class="slds-box slds-m-around_small">
+
+                    <template if:true={item.isFolder}>
+                        📁 {item.name}
+                    </template>
+
+                    <template if:true={item.isFile}>
+                        &nbsp;&nbsp;&nbsp;📄 {item.name}
+                    </template>
+
+                </div>
+
+            </template>
+        </template>
+
+    </lightning-card>
+</template>

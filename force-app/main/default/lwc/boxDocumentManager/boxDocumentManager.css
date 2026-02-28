@@ -1,0 +1,22 @@
+.header-container{
+    display:grid;
+    grid-template-columns: 1fr auto;
+    align-items:center;
+    padding:10px 20px;
+}
+
+.header-center{
+    justify-self:center;
+}
+
+.header-right{
+    justify-self:end;
+}
+
+.header-center lightning-combobox{
+    width:220px;
+}
+
+.content-area{
+    height:250px;
+}
