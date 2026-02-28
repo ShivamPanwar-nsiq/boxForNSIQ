@@ -2,26 +2,27 @@
 
     <lightning-card title="Box Documents">
 
-        <!-- Center Dropdown -->
-        <div class="slds-p-around_medium slds-align_absolute-center">
+        <div class="slds-grid slds-align_absolute-center slds-p-around_small">
 
-            <lightning-combobox
-                name="storage"
-                placeholder="Select Storage"
-                options={storageOptions}
-                onchange={handleStorageChange}
-                class="blueDropdown">
-            </lightning-combobox>
+            <!-- Center : Dropdown -->
+            <div class="slds-col slds-size_1-of-3 slds-align_absolute-center">
+                <lightning-combobox
+                    name="storage"
+                    placeholder="Select Storage"
+                    options={storageOptions}
+                    onchange={handleStorageChange}>
+                </lightning-combobox>
+            </div>
 
-        </div>
+            <!-- Right : Button -->
+            <div class="slds-col slds-size_1-of-3 slds-text-align_right">
+                <lightning-button
+                    label="Add File"
+                    variant="brand"
+                    onclick={openModal}>
+                </lightning-button>
+            </div>
 
-        <!-- Add File Button -->
-        <div class="slds-p-bottom_medium slds-align_absolute-left">
-            <lightning-button 
-                label="Add File"
-                variant="brand"
-                onclick={openModal}>
-            </lightning-button>
         </div>
 
     </lightning-card>
