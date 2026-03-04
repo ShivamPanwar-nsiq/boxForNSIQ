@@ -1,42 +1,95 @@
 import { LightningElement } from 'lwc';
 import getBoxLoginUrl from '@salesforce/apex/BoxAuthController.getBoxLoginUrl';
+import exchangeCodeForToken from '@salesforce/apex/BoxAuthController.exchangeCodeForToken';
 
 export default class BoxAuth extends LightningElement {
 
-connectBox(){
+    connectBox(){
 
-getBoxLoginUrl()
-.then(url => {
+        getBoxLoginUrl()
+        .then(url => {
 
-window.open(
-url,
-"BoxLogin",
-"width=600,height=700"
-);
+            if(!url){
 
-})
-.catch(error=>{
-console.error('Error getting login URL', error);
-});
+                this.dispatchEvent(
+                    new CustomEvent('autherror',{
+                        detail:'Unable to generate Box login URL'
+                    })
+                );
+                return;
+            }
 
-}
+            const popup = window.open(
+                url,
+                "BoxLogin",
+                "width=600,height=700"
+            );
 
-connectedCallback(){
+            if(!popup){
 
-window.addEventListener("message", (event)=>{
+                this.dispatchEvent(
+                    new CustomEvent('autherror',{
+                        detail:'Popup blocked. Please allow popups'
+                    })
+                );
 
-if(event.data && event.data.type === "BOX_AUTH"){
+            }
 
-const authCode = event.data.code;
+        })
+        .catch(error=>{
 
-console.log("Authorization Code:", authCode);
+            let message = 'Connection Error';
 
-// Next step: send code to Apex to get access token
+            if(error.body && error.body.message){
+                message = error.body.message;
+            }
 
-}
+            this.dispatchEvent(
+                new CustomEvent('autherror',{
+                    detail:message
+                })
+            );
 
-});
+        });
 
-}
+    }
+
+    connectedCallback(){
+
+        window.addEventListener("message", (event)=>{
+
+            if(event.data && event.data.type === "BOX_AUTH"){
+
+                const authCode = event.data.code;
+
+                exchangeCodeForToken({authCode : authCode})
+                .then(()=>{
+
+                    this.dispatchEvent(
+                        new CustomEvent("authsuccess")
+                    );
+
+                })
+                .catch(error=>{
+
+                    let message = 'Authentication Failed';
+
+                    if(error.body && error.body.message){
+                        message = error.body.message;
+                    }
+
+                    this.dispatchEvent(
+                        new CustomEvent("autherror",{
+                            detail:message
+                        })
+                    );
+
+                });
+
+            }
+
+        });
+
+    }
 
 }

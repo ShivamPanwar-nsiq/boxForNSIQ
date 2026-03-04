@@ -1,23 +1,39 @@
 <template>
+
     <lightning-card title="Box Files & Folders">
 
-        <template if:true={items}>
-            <template for:each={items} for:item="item">
+        <div class="slds-m-around_small">
 
-                <div key={item.id} class="slds-box slds-m-around_small">
+            <lightning-button
+                label="Back"
+                onclick={goBack}
+                class="slds-m-bottom_small">
+            </lightning-button>
 
-                    <template if:true={item.isFolder}>
-                        📁 {item.name}
-                    </template>
+        </div>
 
-                    <template if:true={item.isFile}>
-                        &nbsp;&nbsp;&nbsp;📄 {item.name}
-                    </template>
+        <template for:each={items} for:item="item">
 
-                </div>
+            <div key={item.id}
+                 class="slds-box slds-m-around_small"
+                 data-id={item.id}
+                 data-type={item.type}
+                 data-url={item.url}
+                 onclick={handleClick}
+                 style="cursor:pointer">
 
-            </template>
+                <template if:true={item.isFolder}>
+                    📁 {item.name}
+                </template>
+
+                <template if:true={item.isFile}>
+                    📄 {item.name}
+                </template>
+
+            </div>
+
         </template>
 
     </lightning-card>
+
 </template>

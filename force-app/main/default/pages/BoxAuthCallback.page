@@ -1,0 +1,23 @@
+<apex:page showHeader="false" sidebar="false">
+
+<script>
+
+const urlParams = new URLSearchParams(window.location.search);
+const code = urlParams.get("code");
+
+if(code){
+
+    window.opener.postMessage(
+        {
+            type: "BOX_AUTH",
+            code: code
+        },
+        "*"
+    );
+
+    window.close();
+}
+
+</script>
+
+</apex:page>

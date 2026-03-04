@@ -1,29 +1,22 @@
 public with sharing class BoxController {
-    
-     
-    
+
     @AuraEnabled(cacheable=true)
     public static List<Map<String,String>> getBoxItems(String folderId) {
-        
-        String accessToken = 'jfDpE2eepdwzFxlG1AkXCBs3dhQs9bmG';
+
+        BoxSetting__c boxSetting = BoxSetting__c.getOrgDefaults();
 
         Http http = new Http();
         HttpRequest req = new HttpRequest();
 
-        //req.setEndpoint('https://api.box.com/2.0/folders/0/items');
-        req.setEndpoint('https://api.box.com/2.0/folders/' + folderId + '/items');
+        req.setEndpoint(BoxService.BOX_BASE_URL + BoxService.GET_FOLDER + folderId + BoxService.GET_FOLDER_ITEMS);
         req.setMethod('GET');
 
-        // Access Token Required
-        req.setHeader('Authorization','Bearer ' + accessToken);
+        req.setHeader('Authorization','Bearer ' + boxSetting.Access_Token__c);
 
         HttpResponse res = http.send(req);
 
-        System.debug('Status Code: ' + res.getStatusCode());
-        System.debug('Body: ' + res.getBody());
-
         if(res.getStatusCode() != 200){
-            throw new AuraHandledException('Box API Error: ' + res.getBody());
+            throw new AuraHandledException(res.getBody());
         }
 
         Map<String,Object> result =
@@ -38,9 +31,14 @@ public with sharing class BoxController {
             Map<String,Object> entry = (Map<String,Object>) obj;
 
             Map<String,String> item = new Map<String,String>();
+
             item.put('id',(String)entry.get('id'));
             item.put('name',(String)entry.get('name'));
             item.put('type',(String)entry.get('type'));
+
+            if((String)entry.get('type') == 'file'){
+                item.put('url','https://app.box.com/file/' + (String)entry.get('id'));
+            }
 
             items.add(item);
         }
