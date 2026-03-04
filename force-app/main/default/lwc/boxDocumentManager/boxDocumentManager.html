@@ -4,7 +4,7 @@
 
         <div class="slds-grid slds-align_absolute-center slds-p-around_small">
 
-            <!-- Center : Dropdown -->
+            <!-- Dropdown -->
             <div class="slds-col slds-size_1-of-3 slds-align_absolute-center">
                 <lightning-combobox
                     name="storage"
@@ -14,7 +14,7 @@
                 </lightning-combobox>
             </div>
 
-            <!-- Right : Button -->
+            <!-- Add File Button -->
             <div class="slds-col slds-size_1-of-3 slds-text-align_right">
                 <lightning-button
                     label="Add File"
@@ -26,7 +26,6 @@
         </div>
 
     </lightning-card>
-
 
     <!-- Add File Modal -->
     <template if:true={showModal}>
@@ -51,7 +50,6 @@
         <div class="slds-backdrop slds-backdrop_open"></div>
     </template>
 
-
     <!-- Box Authentication Modal -->
     <template if:true={showAuthModal}>
         <section role="dialog" class="slds-modal slds-fade-in-open">
@@ -62,7 +60,12 @@
                 </header>
 
                 <div class="slds-modal__content slds-p-around_medium">
-                    <c-box-auth></c-box-auth>
+
+                    <c-box-auth
+                        onauthsuccess={handleAuthSuccess}
+                        onautherror={handleAuthError}>
+                    </c-box-auth>
+
                 </div>
 
                 <footer class="slds-modal__footer">
