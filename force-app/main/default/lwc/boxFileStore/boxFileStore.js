@@ -10,7 +10,7 @@ export function addFiles(newFiles){
 
     newFiles.forEach(file => {
 
-        const exists = files.some(existingFile => existingFile.id === file.id);
+        const exists = files.some(existing => existing.id === file.id);
 
         if(!exists){
             files.push(file);
@@ -24,8 +24,8 @@ export function addFiles(newFiles){
     notifyListeners();
 
     return {
-        added: addedCount,
-        duplicates: duplicateCount
+        added:addedCount,
+        duplicates:duplicateCount
     };
 
 }
@@ -40,7 +40,7 @@ export function registerListener(listener){
 
 function notifyListeners(){
 
-    listeners.forEach(listener => {
+    listeners.forEach(listener=>{
         listener([...files]);
     });
 
