@@ -36,7 +36,6 @@
                             data-url={item.url}>
 
                             <td>
-
                                 <lightning-input
                                     type="checkbox"
                                     checked={item.checked}
@@ -44,7 +43,6 @@
                                     data-type={item.type}
                                     onchange={handleCheckbox}>
                                 </lightning-input>
-
                             </td>
 
                             <td onclick={handleClick} style="cursor:pointer">
@@ -92,6 +90,7 @@
 
                     <lightning-button
                         label="Add File in Salesforce"
+                        icon-name="utility:upload"
                         variant="brand"
                         onclick={handleAddToSalesforce}>
                     </lightning-button>

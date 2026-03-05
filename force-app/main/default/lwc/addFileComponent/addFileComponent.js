@@ -9,23 +9,26 @@ export default class AddFileComponent extends LightningElement {
 
     folderId = '0';
     folderStack = [];
-
     selectedMap = {};
 
-    connectedCallback() {
+    connectedCallback(){
         this.loadItems();
     }
 
-    get cardTitle() {
+    get cardTitle(){
         return this.currentFolderName;
     }
 
-    get showBackButton() {
+    get showBackButton(){
         return this.folderStack.length > 0;
     }
 
     get showAddButton(){
-        return Object.keys(this.selectedMap).length > 0;
+
+        return this.items.some(
+            item => item.isFile && this.selectedMap[item.id]
+        );
+
     }
 
     loadItems(){
@@ -36,15 +39,14 @@ export default class AddFileComponent extends LightningElement {
 
             let data = result.map(item => {
 
-                const checked = this.selectedMap[item.id] === true;
-
                 return {
                     ...item,
                     rowId: item.id,
                     indent:'',
-                    checked: checked,
-                    sizeDisplay: item.size ? item.size : '-',
-                    modifiedDisplay: item.modified ? item.modified : '-',
+                    parentFolderId:null,
+                    checked: !!this.selectedMap[item.id],
+                    sizeDisplay: item.size || '-',
+                    modifiedDisplay: item.modified || '-',
                     isFolder: item.type === 'folder',
                     isFile: item.type === 'file'
                 };
@@ -58,9 +60,6 @@ export default class AddFileComponent extends LightningElement {
 
             this.items = data;
 
-        })
-        .catch(error => {
-            console.error('Error loading Box items', error);
         });
 
     }
@@ -71,47 +70,106 @@ export default class AddFileComponent extends LightningElement {
         const type = event.target.dataset.type;
         const checked = event.target.checked;
 
-        this.selectedMap[id] = checked;
+        // ---------- Folder ----------
+        if(type === 'folder'){
 
-        if(type === 'folder' && checked){
+            if(checked){
 
-            getBoxItems({ folderId: id })
+                this.selectedMap[id] = true;
 
-            .then(result => {
+                getBoxItems({ folderId: id })
+                .then(result => {
 
-                let files = result
-                .filter(i => i.type === 'file')
-                .map(file => {
+                    const files = result
+                    .filter(i => i.type === 'file')
+                    .map(file => {
 
-                    this.selectedMap[file.id] = true;
+                        this.selectedMap[file.id] = true;
 
-                    return {
-                        ...file,
-                        rowId: id + '-' + file.id,
-                        indent:'padding-left:25px',
-                        checked:true,
-                        sizeDisplay: file.size ? file.size : '-',
-                        modifiedDisplay: file.modified ? file.modified : '-',
-                        isFolder:false,
-                        isFile:true
-                    };
+                        return {
+                            ...file,
+                            rowId: id + '-' + file.id,
+                            parentFolderId: id,
+                            indent:'padding-left:25px',
+                            checked:true,
+                            sizeDisplay: file.size || '-',
+                            modifiedDisplay: file.modified || '-',
+                            isFolder:false,
+                            isFile:true
+                        };
+
+                    });
+
+                    const index = this.items.findIndex(i => i.id === id);
+
+                    this.items = [
+                        ...this.items.slice(0,index+1),
+                        ...files,
+                        ...this.items.slice(index+1)
+                    ];
 
                 });
 
-                const index = this.items.findIndex(i => i.id === id);
+            }
+            else{
 
-                this.items = [
-                    ...this.items.slice(0,index+1),
-                    ...files,
-                    ...this.items.slice(index+1)
-                ];
+                delete this.selectedMap[id];
 
-            });
+                this.items = this.items.filter(item => {
+
+                    if(item.parentFolderId === id){
+                        delete this.selectedMap[item.id];
+                        return false;
+                    }
+
+                    return true;
+
+                });
+
+            }
 
         }
 
-        if(!checked){
-            delete this.selectedMap[id];
+        // ---------- File ----------
+        if(type === 'file'){
+
+            if(checked){
+                this.selectedMap[id] = true;
+            }else{
+                delete this.selectedMap[id];
+            }
+
+            const row = this.items.find(i => i.id === id);
+            const parentId = row.parentFolderId;
+
+            if(parentId){
+
+                const folderFiles = this.items.filter(
+                    item => item.parentFolderId === parentId
+                );
+
+                const anyChecked = folderFiles.some(
+                    file => this.selectedMap[file.id]
+                );
+
+                if(!anyChecked){
+
+                    delete this.selectedMap[parentId];
+
+                    this.items = this.items.map(item => {
+
+                        if(item.id === parentId){
+                            return { ...item, checked:false };
+                        }
+
+                        return item;
+
+                    });
+
+                }
+
+            }
+
         }
 
     }
@@ -162,25 +220,19 @@ export default class AddFileComponent extends LightningElement {
 
     handleAddToSalesforce(){
 
-        let selectedFiles = [];
-
-        this.items.forEach(item => {
-
-            if(this.selectedMap[item.id] && item.type === 'file'){
-
-                selectedFiles.push({
-                    id : item.id,
-                    name : item.name,
-                    url : item.url,
-                    size : item.sizeDisplay,
-                    modified : item.modifiedDisplay
-                });
-
-            }
-
-        });
+        const selectedFiles = this.items
+        .filter(item => item.isFile && this.selectedMap[item.id])
+        .map(item => ({
+            id:item.id,
+            name:item.name,
+            url:item.url,
+            size:item.sizeDisplay,
+            modified:item.modifiedDisplay
+        }));
 
         addFiles(selectedFiles);
+
+        this.selectedMap = {};
 
     }
 

@@ -1,7 +1,6 @@
 // Global store for Box files
 
 const files = [];
-
 const listeners = new Set();
 
 export function addFiles(newFiles){
@@ -15,23 +14,17 @@ export function addFiles(newFiles){
 }
 
 export function getFiles(){
-
     return files;
-
 }
 
 export function registerListener(listener){
-
     listeners.add(listener);
-
 }
 
 function notifyListeners(){
 
     listeners.forEach(listener => {
-
         listener([...files]);
-
     });
 
 }
