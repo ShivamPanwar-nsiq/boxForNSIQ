@@ -6,29 +6,75 @@ export default class BoxDocumentManager extends LightningElement {
     @track showModal = false;
     @track showAuthModal = false;
 
+    selectedStorage = '';
+    isAuthCompleted = false;
+
     storageOptions = [
         { label: 'Box', value: 'box' },
         { label: 'Google Drive', value: 'google' },
         { label: 'Dropbox', value: 'dropbox' }
     ];
 
-    handleStorageChange(event) {
+    // Button Label
+    get addFileLabel(){
 
-        const selectedValue = event.detail.value;
-
-        if(selectedValue === 'box'){
-            this.openAuthModal();
+        if(!this.selectedStorage){
+            return 'Add File';
         }
+
+        return 'Add File (' + this.selectedStorageLabel + ')';
     }
 
-    openModal() { 
+    // Disable Button
+    get isButtonDisabled(){
+        return !this.isAuthCompleted;
+    }
+
+    // Storage Label
+    get selectedStorageLabel(){
+
+        const map = {
+            box : 'Box',
+            google : 'Google Drive',
+            dropbox : 'Dropbox'
+        };
+
+        return map[this.selectedStorage];
+    }
+
+    // Storage Type Check
+    get isBox(){
+        return this.selectedStorage === 'box';
+    }
+
+    get isGoogle(){
+        return this.selectedStorage === 'google';
+    }
+
+    get isDropbox(){
+        return this.selectedStorage === 'dropbox';
+    }
+
+    // Select Storage
+    handleStorageChange(event){
+
+        this.selectedStorage = event.detail.value;
+
+        this.isAuthCompleted = false;
+
+        this.openAuthModal();
+    }
+
+    // File Modal
+    openModal(){
         this.showModal = true;
     }
 
-    closeModal() {
+    closeModal(){
         this.showModal = false;
     }
 
+    // Auth Modal
     openAuthModal(){
         this.showAuthModal = true;
     }
@@ -37,18 +83,21 @@ export default class BoxDocumentManager extends LightningElement {
         this.showAuthModal = false;
     }
 
+    // Auth Success
     handleAuthSuccess(){
 
         this.showAuthModal = false;
 
+        this.isAuthCompleted = true;
+
         this.showToast(
             'Success',
-            'Box Connected Successfully',
+            this.selectedStorageLabel + ' Connected Successfully',
             'success'
         );
-
     }
 
+    // Auth Error
     handleAuthError(event){
 
         const message = event.detail || 'Authentication Failed';
@@ -58,19 +107,18 @@ export default class BoxDocumentManager extends LightningElement {
             message,
             'error'
         );
-
     }
 
+    // Toast
     showToast(title,message,variant){
 
         this.dispatchEvent(
             new ShowToastEvent({
-                title: title,
-                message: message,
-                variant: variant
+                title : title,
+                message : message,
+                variant : variant
             })
         );
-
     }
 
 }

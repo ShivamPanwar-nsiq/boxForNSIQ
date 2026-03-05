@@ -1,38 +1,95 @@
 <template>
 
-    <lightning-card title="Box Files & Folders">
+    <lightning-card title={cardTitle}>
+
+        <!-- Back Button -->
+
+        <template if:true={showBackButton}>
+            <div class="slds-m-around_small">
+                <lightning-button
+                    label="Back"
+                    onclick={goBack}>
+                </lightning-button>
+            </div>
+        </template>
 
         <div class="slds-m-around_small">
 
-            <lightning-button
-                label="Back"
-                onclick={goBack}
-                class="slds-m-bottom_small">
-            </lightning-button>
+            <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+
+                <thead>
+                    <tr>
+                        <th style="width:60px"></th>
+                        <th>Name</th>
+                        <th>Updated</th>
+                        <th>Size</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    <template for:each={items} for:item="item">
+
+                        <tr key={item.rowId}
+                            data-id={item.id}
+                            data-name={item.name}
+                            data-type={item.type}
+                            data-url={item.url}>
+
+                            <!-- Checkbox -->
+
+                            <td>
+
+                                <lightning-input
+                                    type="checkbox"
+                                    checked={item.checked}
+                                    data-id={item.id}
+                                    data-type={item.type}
+                                    onchange={handleCheckbox}>
+                                </lightning-input>
+
+                            </td>
+
+                            <!-- Name -->
+
+                            <td onclick={handleClick} style="cursor:pointer">
+
+                                <span style={item.indent}>
+
+                                    <template if:true={item.isFolder}>
+                                        <lightning-icon
+                                            icon-name="utility:open_folder"
+                                            size="small"
+                                            class="slds-m-right_small">
+                                        </lightning-icon>
+                                    </template>
+
+                                    <template if:true={item.isFile}>
+                                        <lightning-icon
+                                            icon-name="doctype:attachment"
+                                            size="small"
+                                            class="slds-m-right_small">
+                                        </lightning-icon>
+                                    </template>
+
+                                    {item.name}
+
+                                </span>
+
+                            </td>
+
+                            <td>{item.modifiedDisplay}</td>
+                            <td>{item.sizeDisplay}</td>
+
+                        </tr>
+
+                    </template>
+
+                </tbody>
+
+            </table>
 
         </div>
-
-        <template for:each={items} for:item="item">
-
-            <div key={item.id}
-                 class="slds-box slds-m-around_small"
-                 data-id={item.id}
-                 data-type={item.type}
-                 data-url={item.url}
-                 onclick={handleClick}
-                 style="cursor:pointer">
-
-                <template if:true={item.isFolder}>
-                    📁 {item.name}
-                </template>
-
-                <template if:true={item.isFile}>
-                    📄 {item.name}
-                </template>
-
-            </div>
-
-        </template>
 
     </lightning-card>
 
