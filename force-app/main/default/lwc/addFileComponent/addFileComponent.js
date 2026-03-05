@@ -5,10 +5,11 @@ import { addFiles } from 'c/boxFileStore';
 export default class AddFileComponent extends LightningElement {
 
     @track items = [];
-    @track currentFolderName = 'Box Folders';
 
     folderId = '0';
     folderStack = [];
+    currentFolderName = 'Box Folders';
+
     selectedMap = {};
 
     connectedCallback(){
@@ -24,34 +25,25 @@ export default class AddFileComponent extends LightningElement {
     }
 
     get showAddButton(){
-
-        return this.items.some(
-            item => item.isFile && this.selectedMap[item.id]
-        );
-
+        return Object.keys(this.selectedMap).length > 0;
     }
 
     loadItems(){
 
         getBoxItems({ folderId: this.folderId })
-
         .then(result => {
 
-            let data = result.map(item => {
-
-                return {
-                    ...item,
-                    rowId: item.id,
-                    indent:'',
-                    parentFolderId:null,
-                    checked: !!this.selectedMap[item.id],
-                    sizeDisplay: item.size || '-',
-                    modifiedDisplay: item.modified || '-',
-                    isFolder: item.type === 'folder',
-                    isFile: item.type === 'file'
-                };
-
-            });
+            let data = result.map(item => ({
+                ...item,
+                rowId: item.id,
+                parentFolderId:null,
+                indent:'',
+                checked: !!this.selectedMap[item.id],
+                sizeDisplay:item.size || '-',
+                modifiedDisplay:item.modified || '-',
+                isFolder:item.type === 'folder',
+                isFile:item.type === 'file'
+            }));
 
             if(this.folderId === '0'){
                 data = data.filter(i => i.isFolder);
@@ -70,14 +62,13 @@ export default class AddFileComponent extends LightningElement {
         const type = event.target.dataset.type;
         const checked = event.target.checked;
 
-        // ---------- Folder ----------
         if(type === 'folder'){
 
             if(checked){
 
                 this.selectedMap[id] = true;
 
-                getBoxItems({ folderId: id })
+                getBoxItems({ folderId:id })
                 .then(result => {
 
                     const files = result
@@ -88,12 +79,12 @@ export default class AddFileComponent extends LightningElement {
 
                         return {
                             ...file,
-                            rowId: id + '-' + file.id,
-                            parentFolderId: id,
+                            rowId:id+'-'+file.id,
+                            parentFolderId:id,
                             indent:'padding-left:25px',
                             checked:true,
-                            sizeDisplay: file.size || '-',
-                            modifiedDisplay: file.modified || '-',
+                            sizeDisplay:file.size || '-',
+                            modifiedDisplay:file.modified || '-',
                             isFolder:false,
                             isFile:true
                         };
@@ -107,6 +98,13 @@ export default class AddFileComponent extends LightningElement {
                         ...files,
                         ...this.items.slice(index+1)
                     ];
+
+                    this.items = this.items.map(item=>{
+                        if(item.id === id){
+                            return {...item,checked:true};
+                        }
+                        return item;
+                    });
 
                 });
 
@@ -126,16 +124,23 @@ export default class AddFileComponent extends LightningElement {
 
                 });
 
+                this.items = this.items.map(item=>{
+                    if(item.id === id){
+                        return {...item,checked:false};
+                    }
+                    return item;
+                });
+
             }
 
         }
 
-        // ---------- File ----------
         if(type === 'file'){
 
             if(checked){
                 this.selectedMap[id] = true;
-            }else{
+            }
+            else{
                 delete this.selectedMap[id];
             }
 
@@ -145,27 +150,32 @@ export default class AddFileComponent extends LightningElement {
             if(parentId){
 
                 const folderFiles = this.items.filter(
-                    item => item.parentFolderId === parentId
+                    i => i.parentFolderId === parentId
                 );
 
                 const anyChecked = folderFiles.some(
-                    file => this.selectedMap[file.id]
+                    f => this.selectedMap[f.id]
                 );
 
-                if(!anyChecked){
+                this.items = this.items.map(item => {
 
+                    if(item.id === id){
+                        return {...item,checked:checked};
+                    }
+
+                    if(item.id === parentId){
+                        return {...item,checked:anyChecked};
+                    }
+
+                    return item;
+
+                });
+
+                if(anyChecked){
+                    this.selectedMap[parentId] = true;
+                }
+                else{
                     delete this.selectedMap[parentId];
-
-                    this.items = this.items.map(item => {
-
-                        if(item.id === parentId){
-                            return { ...item, checked:false };
-                        }
-
-                        return item;
-
-                    });
-
                 }
 
             }
@@ -186,8 +196,8 @@ export default class AddFileComponent extends LightningElement {
         if(type === 'folder'){
 
             this.folderStack.push({
-                id: this.folderId,
-                name: this.currentFolderName
+                id:this.folderId,
+                name:this.currentFolderName
             });
 
             this.folderId = id;
@@ -221,18 +231,22 @@ export default class AddFileComponent extends LightningElement {
     handleAddToSalesforce(){
 
         const selectedFiles = this.items
-        .filter(item => item.isFile && this.selectedMap[item.id])
-        .map(item => ({
-            id:item.id,
-            name:item.name,
-            url:item.url,
-            size:item.sizeDisplay,
-            modified:item.modifiedDisplay
+        .filter(i => i.isFile && this.selectedMap[i.id])
+        .map(i => ({
+            id:i.id,
+            name:i.name,
+            url:i.url,
+            size:i.sizeDisplay,
+            modified:i.modifiedDisplay
         }));
 
         addFiles(selectedFiles);
 
         this.selectedMap = {};
+
+        this.items = this.items.map(i=>{
+            return {...i,checked:false};
+        });
 
     }
 
