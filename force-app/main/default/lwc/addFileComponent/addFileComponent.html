@@ -3,7 +3,6 @@
     <lightning-card title={cardTitle}>
 
         <!-- Back Button -->
-
         <template if:true={showBackButton}>
             <div class="slds-m-around_small">
                 <lightning-button
@@ -36,8 +35,6 @@
                             data-type={item.type}
                             data-url={item.url}>
 
-                            <!-- Checkbox -->
-
                             <td>
 
                                 <lightning-input
@@ -49,8 +46,6 @@
                                 </lightning-input>
 
                             </td>
-
-                            <!-- Name -->
 
                             <td onclick={handleClick} style="cursor:pointer">
 
@@ -88,6 +83,22 @@
                 </tbody>
 
             </table>
+
+            <!-- Add File Button -->
+
+            <template if:true={showAddButton}>
+
+                <div class="slds-m-top_medium slds-align_absolute-center">
+
+                    <lightning-button
+                        label="Add File in Salesforce"
+                        variant="brand"
+                        onclick={handleAddToSalesforce}>
+                    </lightning-button>
+
+                </div>
+
+            </template>
 
         </div>
 

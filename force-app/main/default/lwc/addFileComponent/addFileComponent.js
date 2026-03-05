@@ -1,5 +1,6 @@
 import { LightningElement, track } from 'lwc';
 import getBoxItems from '@salesforce/apex/BoxController.getBoxItems';
+import { addFiles } from 'c/boxFileStore';
 
 export default class AddFileComponent extends LightningElement {
 
@@ -9,7 +10,6 @@ export default class AddFileComponent extends LightningElement {
     folderId = '0';
     folderStack = [];
 
-    // store selected items globally
     selectedMap = {};
 
     connectedCallback() {
@@ -22,6 +22,10 @@ export default class AddFileComponent extends LightningElement {
 
     get showBackButton() {
         return this.folderStack.length > 0;
+    }
+
+    get showAddButton(){
+        return Object.keys(this.selectedMap).length > 0;
     }
 
     loadItems(){
@@ -55,7 +59,6 @@ export default class AddFileComponent extends LightningElement {
             this.items = data;
 
         })
-
         .catch(error => {
             console.error('Error loading Box items', error);
         });
@@ -154,6 +157,30 @@ export default class AddFileComponent extends LightningElement {
             this.loadItems();
 
         }
+
+    }
+
+    handleAddToSalesforce(){
+
+        let selectedFiles = [];
+
+        this.items.forEach(item => {
+
+            if(this.selectedMap[item.id] && item.type === 'file'){
+
+                selectedFiles.push({
+                    id : item.id,
+                    name : item.name,
+                    url : item.url,
+                    size : item.sizeDisplay,
+                    modified : item.modifiedDisplay
+                });
+
+            }
+
+        });
+
+        addFiles(selectedFiles);
 
     }
 

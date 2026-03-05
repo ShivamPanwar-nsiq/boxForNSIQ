@@ -1,135 +1,154 @@
 <template>
 
-    <lightning-card title="Documents Manager">
+<lightning-card title="Documents Manager">
 
-        <div class="slds-grid slds-align_absolute-center slds-p-around_small">
+    <div class="slds-grid slds-align_absolute-center slds-p-around_small">
 
-            <!-- Select Storage -->
-            <div class="slds-col slds-size_1-of-3 slds-align_absolute-center">
+        <!-- Select Storage -->
+        <div class="slds-col slds-size_1-of-3 slds-align_absolute-center">
 
-                <lightning-combobox
-                    name="storage"
-                    label="Select Org"
-                    value={selectedStorage}
-                    placeholder="Select Storage"
-                    options={storageOptions}
-                    onchange={handleStorageChange}>
-                </lightning-combobox>
+            <lightning-combobox
+                name="storage"
+                label="Select Org"
+                value={selectedStorage}
+                placeholder="Select Storage"
+                options={storageOptions}
+                onchange={handleStorageChange}>
+            </lightning-combobox>
 
-            </div>
+        </div>
 
-            <!-- Add File Button -->
-            <div class="slds-col slds-size_1-of-3 slds-text-align_right">
+        <!-- Add File Button -->
+        <div class="slds-col slds-size_1-of-3 slds-text-align_right">
 
-                <lightning-button
-                    label={addFileLabel}
-                    variant="brand"
-                    onclick={openModal}
-                    disabled={isButtonDisabled}>
-                </lightning-button>
+            <lightning-button
+                label={addFileLabel}
+                variant="brand"
+                onclick={openModal}
+                disabled={isButtonDisabled}>
+            </lightning-button>
 
-            </div>
+        </div>
+
+    </div>
+
+</lightning-card>
+
+
+<!-- Selected Files -->
+
+<template if:true={files.length}>
+
+    <lightning-card title="Selected Box Files">
+
+        <div class="slds-p-around_medium">
+
+            <template for:each={files} for:item="file">
+
+                <div key={file.id} class="slds-box slds-m-bottom_small">
+
+                    <a href={file.url} target="_blank">
+                        {file.name}
+                    </a>
+
+                    <div>Size: {file.size}</div>
+
+                </div>
+
+            </template>
 
         </div>
 
     </lightning-card>
 
+</template>
 
-    <!-- Add File Modal -->
 
-    <template if:true={showModal}>
+<!-- Add File Modal -->
 
-        <section role="dialog" class="slds-modal slds-fade-in-open">
+<template if:true={showModal}>
 
-            <div class="slds-modal__container">
+    <section role="dialog" class="slds-modal slds-fade-in-open">
 
-                <header class="slds-modal__header">
-                    <h2 class="slds-text-heading_medium">
-                        Select {selectedStorageLabel} Folder
-                    </h2>
-                </header>
+        <div class="slds-modal__container">
 
-                <div class="slds-modal__content slds-p-around_medium">
+            <header class="slds-modal__header">
+                <h2 class="slds-text-heading_medium">
+                    Select {selectedStorageLabel} Folder
+                </h2>
+            </header>
 
-                    <!-- BOX -->
-                    <template if:true={isBox}>
-                        <c-add-file-component></c-add-file-component>
-                    </template>
+            <div class="slds-modal__content slds-p-around_medium">
 
-                    <!-- GOOGLE -->
-                    <template if:true={isGoogle}>
-                        <p>Google Drive Integration Coming Soon</p>
-                    </template>
+                <!-- BOX -->
+                <template if:true={isBox}>
+                    <c-add-file-component></c-add-file-component>
+                </template>
 
-                    <!-- DROPBOX -->
-                    <template if:true={isDropbox}>
-                        <p>Dropbox Integration Coming Soon</p>
-                    </template>
+                <!-- GOOGLE -->
+                <template if:true={isGoogle}>
+                    <p>Google Drive Integration Coming Soon</p>
+                </template>
 
-                </div>
-
-                <footer class="slds-modal__footer">
-                    <lightning-button label="Close" onclick={closeModal}></lightning-button>
-                </footer>
+                <!-- DROPBOX -->
+                <template if:true={isDropbox}>
+                    <p>Dropbox Integration Coming Soon</p>
+                </template>
 
             </div>
 
-        </section>
+            <footer class="slds-modal__footer">
+                <lightning-button label="Close" onclick={closeModal}></lightning-button>
+            </footer>
 
-        <div class="slds-backdrop slds-backdrop_open"></div>
+        </div>
 
-    </template>
+    </section>
+
+    <div class="slds-backdrop slds-backdrop_open"></div>
+
+</template>
 
 
-    <!-- Authentication Modal -->
+<!-- Authentication Modal -->
 
-    <template if:true={showAuthModal}>
+<template if:true={showAuthModal}>
 
-        <section role="dialog" class="slds-modal slds-fade-in-open">
+    <section role="dialog" class="slds-modal slds-fade-in-open">
 
-            <div class="slds-modal__container">
+        <div class="slds-modal__container">
 
-                <header class="slds-modal__header">
-                    <h2 class="slds-text-heading_medium">
-                        Connect to {selectedStorageLabel}
-                    </h2>
-                </header>
+            <header class="slds-modal__header">
+                <h2 class="slds-text-heading_medium">
+                    Connect to {selectedStorageLabel}
+                </h2>
+            </header>
 
-                <div class="slds-modal__content slds-p-around_medium">
+            <div class="slds-modal__content slds-p-around_medium">
 
-                    <!-- BOX AUTH -->
-                    <template if:true={isBox}>
-                        <c-box-auth
-                            onauthsuccess={handleAuthSuccess}
-                            onautherror={handleAuthError}>
-                        </c-box-auth>
-                    </template>
-
-                    <!-- GOOGLE AUTH -->
-                    <template if:true={isGoogle}>
-                        <p>Google Drive Authentication Coming Soon</p>
-                    </template>
-
-                    <!-- DROPBOX AUTH -->
-                    <template if:true={isDropbox}>
-                        <p>Dropbox Authentication Coming Soon</p>
-                    </template>
-
-                </div>
-
-                <footer class="slds-modal__footer">
-                    <lightning-button
-                        label="Close"
-                        onclick={closeAuthModal}>
-                    </lightning-button>
-                </footer>
+                <template if:true={isBox}>
+                    <c-box-auth
+                        onauthsuccess={handleAuthSuccess}
+                        onautherror={handleAuthError}>
+                    </c-box-auth>
+                </template>
 
             </div>
 
-        </section>
+            <footer class="slds-modal__footer">
+                <lightning-button
+                    label="Close"
+                    onclick={closeAuthModal}>
+                </lightning-button>
+            </footer>
 
-        <div class="slds-backdrop slds-backdrop_open"></div>
+        </div>
 
-    </template>
+    </section>
+
+    <div class="slds-backdrop slds-backdrop_open"></div>
+
+</template>
+
 
 </template>

@@ -1,124 +1,129 @@
 import { LightningElement, track } from 'lwc';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
+import { registerListener, getFiles } from 'c/boxFileStore';
 
 export default class BoxDocumentManager extends LightningElement {
 
-    @track showModal = false;
-    @track showAuthModal = false;
 
-    selectedStorage = '';
-    isAuthCompleted = false;
+@track showModal = false;
+@track showAuthModal = false;
+@track files = [];
 
-    storageOptions = [
-        { label: 'Box', value: 'box' },
-        { label: 'Google Drive', value: 'google' },
-        { label: 'Dropbox', value: 'dropbox' }
-    ];
+selectedStorage = '';
+isAuthCompleted = false;
 
-    // Button Label
-    get addFileLabel(){
+storageOptions = [
+    { label: 'Box', value: 'box' },
+    { label: 'Google Drive', value: 'google' },
+    { label: 'Dropbox', value: 'dropbox' }
+];
 
-        if(!this.selectedStorage){
-            return 'Add File';
-        }
+connectedCallback(){
 
-        return 'Add File (' + this.selectedStorageLabel + ')';
+    this.files = getFiles();
+
+    registerListener((updatedFiles)=>{
+
+        this.files = [...updatedFiles];
+
+    });
+
+}
+
+get addFileLabel(){
+
+    if(!this.selectedStorage){
+        return 'Add File';
     }
 
-    // Disable Button
-    get isButtonDisabled(){
-        return !this.isAuthCompleted;
-    }
+    return 'Add File (' + this.selectedStorageLabel + ')';
+}
 
-    // Storage Label
-    get selectedStorageLabel(){
+get isButtonDisabled(){
+    return !this.isAuthCompleted;
+}
 
-        const map = {
-            box : 'Box',
-            google : 'Google Drive',
-            dropbox : 'Dropbox'
-        };
+get selectedStorageLabel(){
 
-        return map[this.selectedStorage];
-    }
+    const map = {
+        box : 'Box',
+        google : 'Google Drive',
+        dropbox : 'Dropbox'
+    };
 
-    // Storage Type Check
-    get isBox(){
-        return this.selectedStorage === 'box';
-    }
+    return map[this.selectedStorage];
+}
 
-    get isGoogle(){
-        return this.selectedStorage === 'google';
-    }
+get isBox(){
+    return this.selectedStorage === 'box';
+}
 
-    get isDropbox(){
-        return this.selectedStorage === 'dropbox';
-    }
+get isGoogle(){
+    return this.selectedStorage === 'google';
+}
 
-    // Select Storage
-    handleStorageChange(event){
+get isDropbox(){
+    return this.selectedStorage === 'dropbox';
+}
 
-        this.selectedStorage = event.detail.value;
+handleStorageChange(event){
 
-        this.isAuthCompleted = false;
+    this.selectedStorage = event.detail.value;
 
-        this.openAuthModal();
-    }
+    this.isAuthCompleted = false;
 
-    // File Modal
-    openModal(){
-        this.showModal = true;
-    }
+    this.openAuthModal();
+}
 
-    closeModal(){
-        this.showModal = false;
-    }
+openModal(){
+    this.showModal = true;
+}
 
-    // Auth Modal
-    openAuthModal(){
-        this.showAuthModal = true;
-    }
+closeModal(){
+    this.showModal = false;
+}
 
-    closeAuthModal(){
-        this.showAuthModal = false;
-    }
+openAuthModal(){
+    this.showAuthModal = true;
+}
 
-    // Auth Success
-    handleAuthSuccess(){
+closeAuthModal(){
+    this.showAuthModal = false;
+}
 
-        this.showAuthModal = false;
+handleAuthSuccess(){
 
-        this.isAuthCompleted = true;
+    this.showAuthModal = false;
 
-        this.showToast(
-            'Success',
-            this.selectedStorageLabel + ' Connected Successfully',
-            'success'
-        );
-    }
+    this.isAuthCompleted = true;
 
-    // Auth Error
-    handleAuthError(event){
+    this.showToast(
+        'Success',
+        this.selectedStorageLabel + ' Connected Successfully',
+        'success'
+    );
+}
 
-        const message = event.detail || 'Authentication Failed';
+handleAuthError(event){
 
-        this.showToast(
-            'Error',
-            message,
-            'error'
-        );
-    }
+    const message = event.detail || 'Authentication Failed';
 
-    // Toast
-    showToast(title,message,variant){
+    this.showToast(
+        'Error',
+        message,
+        'error'
+    );
+}
 
-        this.dispatchEvent(
-            new ShowToastEvent({
-                title : title,
-                message : message,
-                variant : variant
-            })
-        );
-    }
+showToast(title,message,variant){
+
+    this.dispatchEvent(
+        new ShowToastEvent({
+            title : title,
+            message : message,
+            variant : variant
+        })
+    );
+}
 
 }
