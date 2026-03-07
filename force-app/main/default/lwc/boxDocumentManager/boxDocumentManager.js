@@ -1,9 +1,11 @@
-import { LightningElement, track } from 'lwc';
+import { LightningElement, track, api } from 'lwc';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import { registerListener, getFiles } from 'c/boxFileStore';
 
 export default class BoxDocumentManager extends LightningElement {
 
+    @api recordId;
+    @api objectApiName;
 
 @track showModal = false;
 @track showAuthModal = false;

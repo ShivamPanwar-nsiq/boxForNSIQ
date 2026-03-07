@@ -2,16 +2,42 @@
 
     <lightning-card title={cardTitle}>
 
-        <!-- Back Button -->
-        <template if:true={showBackButton}>
-            <div class="slds-m-around_small">
+        <!-- Header Buttons -->
+        <div class="slds-grid slds-grid_align-spread slds-m-around_small">
+
+            <!-- Back Button -->
+            <template if:true={showBackButton}>
                 <lightning-button
                     label="Back"
+                    icon-name="utility:back"
                     onclick={goBack}>
                 </lightning-button>
+            </template>
+
+            <!-- Upload File Button -->
+            <lightning-button
+                label="Upload File"
+                icon-name="utility:upload"
+                variant="brand"
+                onclick={openUpload}>
+            </lightning-button>
+
+        </div>
+
+        <!-- Upload File Section -->
+        <template if:true={showUpload}>
+            <div class="slds-box slds-theme_default slds-m-around_small">
+
+                <c-box-file-upload
+                    record-id={recordId}
+                    object-api-name={objectApiName}
+                    onuploadcomplete={handleUploadComplete}>
+                </c-box-file-upload>
+
             </div>
         </template>
 
+        <!-- Files Table -->
         <div class="slds-m-around_small">
 
             <table class="slds-table slds-table_cell-buffer slds-table_bordered">
@@ -35,6 +61,7 @@
                             data-type={item.type}
                             data-url={item.url}>
 
+                            <!-- Checkbox -->
                             <td>
                                 <lightning-input
                                     type="checkbox"
@@ -45,6 +72,7 @@
                                 </lightning-input>
                             </td>
 
+                            <!-- File / Folder Name -->
                             <td onclick={handleClick} style="cursor:pointer">
 
                                 <span style={item.indent}>
@@ -71,7 +99,10 @@
 
                             </td>
 
+                            <!-- Modified -->
                             <td>{item.modifiedDisplay}</td>
+
+                            <!-- Size -->
                             <td>{item.sizeDisplay}</td>
 
                         </tr>

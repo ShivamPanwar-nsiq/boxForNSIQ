@@ -82,7 +82,10 @@
 
                 <!-- BOX -->
                 <template if:true={isBox}>
-                    <c-add-file-component></c-add-file-component>
+                    <c-add-file-component
+                                  record-id={recordId}
+                                  object-api-name={objectApiName}>
+                     </c-add-file-component>
                 </template>
 
                 <!-- GOOGLE -->

@@ -1,11 +1,15 @@
-import { LightningElement, track } from 'lwc';
+import { LightningElement, track, api } from 'lwc';
 import getBoxItems from '@salesforce/apex/BoxController.getBoxItems';
 import { addFiles } from 'c/boxFileStore';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 
 export default class AddFileComponent extends LightningElement {
 
+    @api recordId;
+    @api objectApiName;
+
     @track items = [];
+    @track showUpload = false;
 
     folderId = '0';
     folderStack = [];
@@ -25,12 +29,34 @@ export default class AddFileComponent extends LightningElement {
         return this.folderStack.length > 0;
     }
 
-    // show button only if files selected
     get showAddButton(){
         return this.items.some(
             item => item.isFile && this.selectedMap[item.id]
         );
     }
+
+    /* ---------------- Upload Button ---------------- */
+
+    openUpload(){
+        this.showUpload = true;
+    }
+
+    handleUploadComplete(){
+
+        this.showUpload = false;
+
+        this.dispatchEvent(
+            new ShowToastEvent({
+                title:'Success',
+                message:'File uploaded successfully',
+                variant:'success'
+            })
+        );
+
+        this.loadItems();
+    }
+
+    /* ---------------- Load Box Files ---------------- */
 
     loadItems(){
 
@@ -59,6 +85,8 @@ export default class AddFileComponent extends LightningElement {
         });
 
     }
+
+    /* ---------------- Checkbox Logic ---------------- */
 
     handleCheckbox(event){
 
@@ -97,7 +125,6 @@ export default class AddFileComponent extends LightningElement {
 
                     const index = this.items.findIndex(i => i.id === id);
 
-                    // remove old files first
                     this.items = this.items.filter(
                         item => item.parentFolderId !== id
                     );
@@ -151,6 +178,8 @@ export default class AddFileComponent extends LightningElement {
 
     }
 
+    /* ---------------- Folder Click ---------------- */
+
     handleClick(event){
 
         const row = event.currentTarget.parentElement;
@@ -180,6 +209,8 @@ export default class AddFileComponent extends LightningElement {
 
     }
 
+    /* ---------------- Back Button ---------------- */
+
     goBack(){
 
         if(this.folderStack.length > 0){
@@ -194,6 +225,8 @@ export default class AddFileComponent extends LightningElement {
         }
 
     }
+
+    /* ---------------- Add Selected Files ---------------- */
 
     handleAddToSalesforce(){
 
