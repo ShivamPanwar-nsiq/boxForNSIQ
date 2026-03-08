@@ -1,5 +1,3 @@
-// Global store for Box files
-
 const files = [];
 const listeners = new Set();
 
@@ -15,17 +13,20 @@ export function addFiles(newFiles){
         if(!exists){
             files.push(file);
             addedCount++;
-        }else{
+        } 
+        else{
             duplicateCount++;
         }
 
     });
 
-    notifyListeners();
+    if(addedCount > 0){
+        notifyListeners();
+    }
 
     return {
-        added:addedCount,
-        duplicates:duplicateCount
+        added: addedCount,
+        duplicates: duplicateCount
     };
 
 }
@@ -38,10 +39,16 @@ export function registerListener(listener){
     listeners.add(listener);
 }
 
+export function unregisterListener(listener){
+    listeners.delete(listener);
+}
+
 function notifyListeners(){
 
+    const snapshot = [...files];
+
     listeners.forEach(listener=>{
-        listener([...files]);
+        listener(snapshot);
     });
 
 }

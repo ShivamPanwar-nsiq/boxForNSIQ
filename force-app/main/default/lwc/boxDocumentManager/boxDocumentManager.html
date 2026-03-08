@@ -4,12 +4,11 @@
 
     <div class="slds-grid slds-align_absolute-center slds-p-around_small">
 
-        <!-- Select Storage -->
         <div class="slds-col slds-size_1-of-3 slds-align_absolute-center">
 
             <lightning-combobox
                 name="storage"
-                label="Select Org"
+                label="Select Storage"
                 value={selectedStorage}
                 placeholder="Select Storage"
                 options={storageOptions}
@@ -18,7 +17,6 @@
 
         </div>
 
-        <!-- Add File Button -->
         <div class="slds-col slds-size_1-of-3 slds-text-align_right">
 
             <lightning-button
@@ -34,8 +32,6 @@
 
 </lightning-card>
 
-
-<!-- Selected Files -->
 
 <template if:true={files.length}>
 
@@ -64,8 +60,6 @@
 </template>
 
 
-<!-- Add File Modal -->
-
 <template if:true={showModal}>
 
     <section role="dialog" class="slds-modal slds-fade-in-open">
@@ -73,27 +67,28 @@
         <div class="slds-modal__container">
 
             <header class="slds-modal__header">
+
                 <h2 class="slds-text-heading_medium">
                     Select {selectedStorageLabel} Folder
                 </h2>
+
             </header>
 
             <div class="slds-modal__content slds-p-around_medium">
 
-                <!-- BOX -->
                 <template if:true={isBox}>
+
                     <c-add-file-component
-                                  record-id={recordId}
-                                  object-api-name={objectApiName}>
-                     </c-add-file-component>
+                        record-id={recordId}
+                        object-api-name={objectApiName}>
+                    </c-add-file-component>
+
                 </template>
 
-                <!-- GOOGLE -->
                 <template if:true={isGoogle}>
                     <p>Google Drive Integration Coming Soon</p>
                 </template>
 
-                <!-- DROPBOX -->
                 <template if:true={isDropbox}>
                     <p>Dropbox Integration Coming Soon</p>
                 </template>
@@ -101,48 +96,12 @@
             </div>
 
             <footer class="slds-modal__footer">
-                <lightning-button label="Close" onclick={closeModal}></lightning-button>
-            </footer>
 
-        </div>
-
-    </section>
-
-    <div class="slds-backdrop slds-backdrop_open"></div>
-
-</template>
-
-
-<!-- Authentication Modal -->
-
-<template if:true={showAuthModal}>
-
-    <section role="dialog" class="slds-modal slds-fade-in-open">
-
-        <div class="slds-modal__container">
-
-            <header class="slds-modal__header">
-                <h2 class="slds-text-heading_medium">
-                    Connect to {selectedStorageLabel}
-                </h2>
-            </header>
-
-            <div class="slds-modal__content slds-p-around_medium">
-
-                <template if:true={isBox}>
-                    <c-box-auth
-                        onauthsuccess={handleAuthSuccess}
-                        onautherror={handleAuthError}>
-                    </c-box-auth>
-                </template>
-
-            </div>
-
-            <footer class="slds-modal__footer">
                 <lightning-button
                     label="Close"
-                    onclick={closeAuthModal}>
+                    onclick={closeModal}>
                 </lightning-button>
+
             </footer>
 
         </div>
@@ -152,6 +111,5 @@
     <div class="slds-backdrop slds-backdrop_open"></div>
 
 </template>
-
 
 </template>

@@ -15,6 +15,33 @@ public with sharing class BoxAuthController {
     }
 
 
+    // ⭐ ADD THIS METHOD HERE
+    @AuraEnabled(cacheable=true)
+    public static Boolean isBoxAuthenticated(){
+
+        BoxSetting__c setting = BoxSetting__c.getOrgDefaults();
+
+        if(setting == null){
+            return false;
+        }
+
+        if(String.isBlank(setting.Access_Token__c)){
+            return false;
+        }
+
+        if(setting.Token_Expiry__c == null){
+            return false;
+        }
+
+        // If expired token → refresh will happen automatically
+        if(setting.Token_Expiry__c <= System.now()){
+            return true;
+        }
+
+        return true;
+    }
+
+
     @AuraEnabled
     public static String exchangeCodeForToken(String authCode){
 
@@ -64,7 +91,6 @@ public with sharing class BoxAuthController {
             throw new AuraHandledException('Authentication Error: ' + e.getMessage());
 
         }
-
     }
 
 
@@ -127,7 +153,6 @@ public with sharing class BoxAuthController {
             throw new AuraHandledException('Refresh Token Error: ' + e.getMessage());
 
         }
-
     }
 
 }

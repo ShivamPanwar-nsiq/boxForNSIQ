@@ -1,11 +1,18 @@
 <template>
+
     <div class="slds-m-top_medium">
 
         <lightning-input
             type="file"
             label="Upload File to Box"
+            accept="*"
             onchange={handleUpload}>
         </lightning-input>
 
+        <template if:true={isUploading}>
+            <lightning-spinner size="small"></lightning-spinner>
+        </template>
+
     </div>
+
 </template>

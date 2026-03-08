@@ -1,5 +1,13 @@
 public class BoxMultipartHelper {
 
+    /*
+    ============================================================
+    BUILD MULTIPART REQUEST BODY
+    ============================================================
+    This matches exactly how Postman sends multipart/form-data
+    ============================================================
+    */
+
     public static Blob buildMultipartBody(
         String folderId,
         String fileName,
@@ -7,40 +15,52 @@ public class BoxMultipartHelper {
         String boundary
     ){
 
+        System.debug('Building Multipart Body');
+
         String attributes =
         '{"name":"' + fileName + '","parent":{"id":"' + folderId + '"}}';
 
-        String bodyStart =
+        String part1 =
         '--' + boundary + '\r\n' +
         'Content-Disposition: form-data; name="attributes"\r\n' +
         'Content-Type: application/json\r\n\r\n' +
-        attributes + '\r\n' +
+        attributes + '\r\n';
 
+        String part2 =
         '--' + boundary + '\r\n' +
         'Content-Disposition: form-data; name="file"; filename="' + fileName + '"\r\n' +
         'Content-Type: application/octet-stream\r\n\r\n';
 
-        String bodyEnd =
-        '\r\n--' + boundary + '--\r\n';
+        String closing =
+        '\r\n--' + boundary + '--';
 
-        Blob startBlob = Blob.valueOf(bodyStart);
-        Blob endBlob = Blob.valueOf(bodyEnd);
+        Blob body = Blob.valueOf(part1);
 
-        String base64Start = EncodingUtil.base64Encode(startBlob);
-        String base64File  = EncodingUtil.base64Encode(fileBlob);
-        String base64End   = EncodingUtil.base64Encode(endBlob);
+        body = concat(body, Blob.valueOf(part2));
+        body = concat(body, fileBlob);
+        body = concat(body, Blob.valueOf(closing));
 
-        if(base64File.endsWith('==')){
-            base64File = base64File.substring(0, base64File.length()-2) + '0K';
-        } 
-        else if(base64File.endsWith('=')){
-            base64File = base64File.substring(0, base64File.length()-1) + 'N';
-        }
+        return body;
+    }
 
-        Blob finalBody = EncodingUtil.base64Decode(
-            base64Start + base64File + base64End
-        );
 
-        return finalBody;
+    /*
+    ============================================================
+    BLOB CONCAT HELPER
+    ============================================================
+    Used to combine multiple blob parts
+    ============================================================
+    */
+
+    public static Blob concat(Blob a, Blob b){
+
+        if(a == null) return b;
+        if(b == null) return a;
+
+        String hex =
+        EncodingUtil.convertToHex(a) +
+        EncodingUtil.convertToHex(b);
+
+        return EncodingUtil.convertFromHex(hex);
     }
 }

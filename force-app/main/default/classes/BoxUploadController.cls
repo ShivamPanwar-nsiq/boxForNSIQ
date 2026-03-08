@@ -1,30 +1,175 @@
 public with sharing class BoxUploadController {
 
+    /*
+    ============================================================
+    MAIN METHOD CALLED FROM LWC
+    ============================================================
+    This method receives:
+    recordId   -> Salesforce record
+    objectName -> Object API name (used as folder name)
+    fileName   -> Uploaded file name
+    base64Data -> File data from LWC
+    ============================================================
+    */
+
     @AuraEnabled
     public static String uploadFileToBox(String recordId,
                                          String objectName,
                                          String fileName,
                                          String base64Data) {
 
-        try {
+        System.debug('===== BOX UPLOAD START =====');
+        System.debug('RecordId : ' + recordId);
+        System.debug('ObjectName : ' + objectName);
+        System.debug('FileName : ' + fileName);
+
+        try{
+
+            /* VALIDATIONS */
+
+            if(String.isBlank(fileName)){
+                throw new AuraHandledException('File name missing');
+            }
+
+            if(String.isBlank(base64Data)){
+                throw new AuraHandledException('File data missing');
+            }
+
+            /* CONVERT BASE64 TO BLOB */
 
             Blob fileBlob = EncodingUtil.base64Decode(base64Data);
 
+            System.debug('File Size (bytes) : ' + fileBlob.size());
+
+            /* GET OR CREATE FOLDER */
+
             String folderId = getOrCreateFolder(objectName);
 
-            uploadFile(folderId, fileName, fileBlob);
+            System.debug('Folder Id : ' + folderId);
 
-            return 'SUCCESS';
+            /* UPLOAD FILE */
 
-        } catch (Exception e) {
+            uploadFile(folderId,fileName,fileBlob);
 
-            System.debug('BOX ERROR: ' + e.getMessage());
+            System.debug('===== FILE UPLOADED SUCCESSFULLY =====');
 
-            throw new AuraHandledException('Box Upload Failed : ' + e.getMessage());
+            return 'File uploaded successfully to Box';
+
+        }
+        catch(Exception e){
+
+            System.debug('BOX ERROR : ' + e.getMessage());
+
+            throw new AuraHandledException(e.getMessage());
         }
     }
 
-    public static String getOrCreateFolder(String folderName) {
+
+    /*
+    ============================================================
+    SEARCH FOLDER IN BOX
+    ============================================================
+    */
+    public static String searchFolder(String folderName){
+
+        System.debug('Searching Folder : ' + folderName);
+
+        HttpRequest req = new HttpRequest();
+
+        req.setEndpoint(
+            'callout:Box_API/2.0/search?query=' +
+            EncodingUtil.urlEncode(folderName,'UTF-8') +
+            '&type=folder'
+        );
+
+        req.setMethod('GET');
+
+        Http http = new Http();
+        HttpResponse res = http.send(req);
+
+        System.debug('Search Folder Status : ' + res.getStatusCode());
+        System.debug('Search Folder Response : ' + res.getBody());
+
+        if(res.getStatusCode() != 200){
+            return null;
+        }
+
+        Map<String,Object> result =
+        (Map<String,Object>)JSON.deserializeUntyped(res.getBody());
+
+        List<Object> entries =
+        (List<Object>)result.get('entries');
+
+        if(entries != null && entries.size() > 0){
+
+            Map<String,Object> folder =
+            (Map<String,Object>)entries[0];
+
+            String folderId = (String)folder.get('id');
+
+            System.debug('Folder Found Id : ' + folderId);
+
+            return folderId;
+        }
+
+        System.debug('Folder Not Found');
+
+        return null;
+    }
+
+
+    /*
+    ============================================================
+    CREATE FOLDER IN BOX
+    ============================================================
+    */
+
+    public static String createFolder(String folderName){
+
+        System.debug('Creating Folder : ' + folderName);
+
+        HttpRequest req = new HttpRequest();
+
+        req.setEndpoint('callout:Box_API/2.0/folders');
+
+        req.setMethod('POST');
+
+        req.setHeader('Content-Type','application/json');
+
+        req.setBody(
+            '{"name":"'+folderName+'","parent":{"id":"0"}}'
+        );
+
+        Http http = new Http();
+        HttpResponse res = http.send(req);
+
+        System.debug('Create Folder Status : ' + res.getStatusCode());
+        System.debug('Create Folder Response : ' + res.getBody());
+
+        if(res.getStatusCode() != 201){
+            throw new AuraHandledException(res.getBody());
+        }
+
+        Map<String,Object> result =
+        (Map<String,Object>)JSON.deserializeUntyped(res.getBody());
+
+        String folderId = (String)result.get('id');
+
+        System.debug('New Folder Id : ' + folderId);
+
+        return folderId;
+    }
+
+
+    /*
+    ============================================================
+    GET EXISTING FOLDER OR CREATE NEW ONE
+    ============================================================
+    */
+
+    public static String getOrCreateFolder(String folderName){
+
+        System.debug('GetOrCreateFolder : ' + folderName);
 
         String folderId = searchFolder(folderName);
 
@@ -35,89 +180,25 @@ public with sharing class BoxUploadController {
         return createFolder(folderName);
     }
 
-    public static String searchFolder(String folderName) {
 
-        BoxSetting__c setting = BoxSetting__c.getOrgDefaults();
 
-        HttpRequest req = new HttpRequest();
+    /*
+    ============================================================
+    FILE UPLOAD TO BOX
+    ============================================================
+    */
 
-        req.setEndpoint(
-            'https://api.box.com/2.0/search?query=' +
-            EncodingUtil.urlEncode(folderName,'UTF-8') +
-            '&type=folder'
-        );
+    public static void uploadFile(String folderId,
+                                  String fileName,
+                                  Blob fileBlob){
 
-        req.setMethod('GET');
+        System.debug('Uploading File To Box');
 
-        req.setHeader('Authorization','Bearer ' + setting.Access_Token__c);
+        String boundary = 'boundary_' + String.valueOf(Crypto.getRandomInteger());
 
-        Http http = new Http();
+        System.debug('Boundary : ' + boundary);
 
-        HttpResponse res = http.send(req);
-
-        System.debug('BOX SEARCH RESPONSE: ' + res.getBody());
-
-        if(res.getStatusCode() != 200){
-            return null;
-        }
-
-        Map<String,Object> result =
-        (Map<String,Object>)JSON.deserializeUntyped(res.getBody());
-
-        List<Object> entries = (List<Object>)result.get('entries');
-
-        if(entries != null && entries.size() > 0){
-
-            Map<String,Object> folder =
-            (Map<String,Object>)entries[0];
-
-            return (String)folder.get('id');
-        }
-
-        return null;
-    }
-
-    public static String createFolder(String folderName) {
-
-        BoxSetting__c setting = BoxSetting__c.getOrgDefaults();
-
-        HttpRequest req = new HttpRequest();
-
-        req.setEndpoint('https://api.box.com/2.0/folders');
-
-        req.setMethod('POST');
-
-        req.setHeader('Authorization','Bearer ' + setting.Access_Token__c);
-
-        req.setHeader('Content-Type','application/json');
-
-        req.setBody(
-            '{"name":"' + folderName + '","parent":{"id":"0"}}'
-        );
-
-        Http http = new Http();
-
-        HttpResponse res = http.send(req);
-
-        System.debug('BOX CREATE RESPONSE: ' + res.getBody());
-
-        if(res.getStatusCode() != 201){
-            throw new AuraHandledException(res.getBody());
-        }
-
-        Map<String,Object> result =
-        (Map<String,Object>)JSON.deserializeUntyped(res.getBody());
-
-        return (String)result.get('id');
-    }
-
-    public static void uploadFile(String folderId,String fileName,Blob fileBlob) {
-
-        BoxSetting__c setting = BoxSetting__c.getOrgDefaults();
-
-        String boundary = '1ff13444ed8140c7a32fc4e6451aa76d';
-
-        Blob body = BoxMultipartHelper.buildMultipartBody(
+        Blob finalBody = BoxMultipartHelper.buildMultipartBody(
             folderId,
             fileName,
             fileBlob,
@@ -126,28 +207,35 @@ public with sharing class BoxUploadController {
 
         HttpRequest req = new HttpRequest();
 
-        req.setEndpoint('https://upload.box.com/api/2.0/files/content');
+        req.setEndpoint('callout:Box_Upload/api/2.0/files/content');
 
         req.setMethod('POST');
-
-        req.setHeader('Authorization','Bearer ' + setting.Access_Token__c);
 
         req.setHeader(
             'Content-Type',
             'multipart/form-data; boundary=' + boundary
         );
 
-        req.setBodyAsBlob(body);
+        req.setHeader('Accept','application/json');
+
+        req.setBodyAsBlob(finalBody);
 
         Http http = new Http();
-
         HttpResponse res = http.send(req);
 
-        System.debug('BOX STATUS: ' + res.getStatusCode());
-        System.debug('BOX RESPONSE: ' + res.getBody());
+        System.debug('BOX STATUS : ' + res.getStatusCode());
+        System.debug('BOX RESPONSE : ' + res.getBody());
 
         if(res.getStatusCode() >= 300){
-            throw new AuraHandledException(res.getBody());
+
+            Map<String,Object> error =
+            (Map<String,Object>)JSON.deserializeUntyped(res.getBody());
+
+            if(error.containsKey('message')){
+                throw new AuraHandledException((String)error.get('message'));
+            }
+
+            throw new AuraHandledException('Box upload failed');
         }
     }
 }

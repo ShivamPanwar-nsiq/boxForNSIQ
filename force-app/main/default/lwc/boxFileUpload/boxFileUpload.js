@@ -1,4 +1,4 @@
-import { LightningElement, api } from 'lwc';
+import { LightningElement, api, track } from 'lwc';
 import uploadFileToBox from '@salesforce/apex/BoxUploadController.uploadFileToBox';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 
@@ -7,34 +7,43 @@ export default class BoxFileUpload extends LightningElement {
     @api recordId;
     @api objectApiName;
 
-    handleUpload(event) {
+    @track isUploading = false;
+
+    handleUpload(event){
 
         const file = event.target.files[0];
 
-        if (!file) {
+        if(!file){
             return;
         }
 
+        const fileName = file.name;
+
         const reader = new FileReader();
+
+        this.isUploading = true;
 
         reader.onload = () => {
 
             const base64 = reader.result.split(',')[1];
 
             uploadFileToBox({
-                recordId: this.recordId,
-                objectName: this.objectApiName,
-                fileName: file.name,
-                base64Data: base64
+                recordId:this.recordId,
+                objectName:this.objectApiName,
+                fileName:fileName,
+                base64Data:base64
             })
-            .then(() => {
+            .then((result)=>{
 
-                this.showToast('Success','File uploaded to Box','success');
+                this.showToast(
+                    'Success',
+                    result,
+                    'success'
+                );
 
-                this.template.querySelector('lightning-input').value = null;
-
+                this.resetFileInput();
             })
-            .catch(error => {
+            .catch(error=>{
 
                 let message = 'Upload Failed';
 
@@ -42,21 +51,36 @@ export default class BoxFileUpload extends LightningElement {
                     message = error.body.message;
                 }
 
-                this.showToast('Error',message,'error');
+                this.showToast(
+                    'Error',
+                    message,
+                    'error'
+                );
 
+            })
+            .finally(()=>{
+                this.isUploading = false;
             });
+
         };
 
         reader.readAsDataURL(file);
+    }
+
+    resetFileInput(){
+        const input = this.template.querySelector('lightning-input');
+        if(input){
+            input.value = null;
+        }
     }
 
     showToast(title,message,variant){
 
         this.dispatchEvent(
             new ShowToastEvent({
-                title,
-                message,
-                variant
+                title:title,
+                message:message,
+                variant:variant
             })
         );
     }

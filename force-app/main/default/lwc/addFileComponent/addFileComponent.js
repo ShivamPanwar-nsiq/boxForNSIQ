@@ -10,6 +10,7 @@ export default class AddFileComponent extends LightningElement {
 
     @track items = [];
     @track showUpload = false;
+    @track isLoading = false;
 
     folderId = '0';
     folderStack = [];
@@ -35,30 +36,22 @@ export default class AddFileComponent extends LightningElement {
         );
     }
 
-    /* ---------------- Upload Button ---------------- */
-
     openUpload(){
         this.showUpload = true;
     }
 
+    stopPropagation(event){
+        event.stopPropagation();
+    }
+
     handleUploadComplete(){
-
         this.showUpload = false;
-
-        this.dispatchEvent(
-            new ShowToastEvent({
-                title:'Success',
-                message:'File uploaded successfully',
-                variant:'success'
-            })
-        );
-
         this.loadItems();
     }
 
-    /* ---------------- Load Box Files ---------------- */
-
     loadItems(){
+
+        this.isLoading = true;
 
         getBoxItems({ folderId: this.folderId })
         .then(result => {
@@ -68,7 +61,7 @@ export default class AddFileComponent extends LightningElement {
                 rowId:item.id,
                 parentFolderId:null,
                 indent:'',
-                checked: !!this.selectedMap[item.id],
+                checked:false,
                 sizeDisplay:item.size || '-',
                 modifiedDisplay:item.modified || '-',
                 isFolder:item.type === 'folder',
@@ -81,12 +74,15 @@ export default class AddFileComponent extends LightningElement {
             }
 
             this.items = data;
+            this.isLoading = false;
 
+        })
+        .catch(error=>{
+            console.error(error);
+            this.isLoading = false;
         });
 
     }
-
-    /* ---------------- Checkbox Logic ---------------- */
 
     handleCheckbox(event){
 
@@ -94,6 +90,7 @@ export default class AddFileComponent extends LightningElement {
         const type = event.target.dataset.type;
         const checked = event.target.checked;
 
+        // Folder checkbox
         if(type === 'folder'){
 
             if(checked){
@@ -123,18 +120,16 @@ export default class AddFileComponent extends LightningElement {
 
                     });
 
-                    const index = this.items.findIndex(i => i.id === id);
-
                     this.items = this.items.filter(
                         item => item.parentFolderId !== id
                     );
 
-                    const updatedIndex = this.items.findIndex(i => i.id === id);
+                    const folderIndex = this.items.findIndex(i => i.id === id);
 
                     this.items = [
-                        ...this.items.slice(0,updatedIndex+1),
+                        ...this.items.slice(0,folderIndex + 1),
                         ...files,
-                        ...this.items.slice(updatedIndex+1)
+                        ...this.items.slice(folderIndex + 1)
                     ];
 
                 });
@@ -157,13 +152,16 @@ export default class AddFileComponent extends LightningElement {
 
             }
 
+            return;
         }
 
+        // File checkbox
         if(type === 'file'){
 
             if(checked){
                 this.selectedMap[id] = true;
-            }else{
+            }
+            else{
                 delete this.selectedMap[id];
             }
 
@@ -178,11 +176,9 @@ export default class AddFileComponent extends LightningElement {
 
     }
 
-    /* ---------------- Folder Click ---------------- */
-
     handleClick(event){
 
-        const row = event.currentTarget.parentElement;
+        const row = event.currentTarget.closest('tr');
 
         const id = row.dataset.id;
         const type = row.dataset.type;
@@ -200,7 +196,6 @@ export default class AddFileComponent extends LightningElement {
             this.currentFolderName = name;
 
             this.loadItems();
-
         }
 
         if(type === 'file'){
@@ -208,8 +203,6 @@ export default class AddFileComponent extends LightningElement {
         }
 
     }
-
-    /* ---------------- Back Button ---------------- */
 
     goBack(){
 
@@ -226,8 +219,6 @@ export default class AddFileComponent extends LightningElement {
 
     }
 
-    /* ---------------- Add Selected Files ---------------- */
-
     handleAddToSalesforce(){
 
         const selectedFiles = this.items
@@ -243,6 +234,7 @@ export default class AddFileComponent extends LightningElement {
         const result = addFiles(selectedFiles);
 
         if(result.added > 0){
+
             this.dispatchEvent(
                 new ShowToastEvent({
                     title:'Success',
@@ -250,9 +242,11 @@ export default class AddFileComponent extends LightningElement {
                     variant:'success'
                 })
             );
+
         }
 
         if(result.duplicates > 0){
+
             this.dispatchEvent(
                 new ShowToastEvent({
                     title:'Duplicate Files',
@@ -260,6 +254,7 @@ export default class AddFileComponent extends LightningElement {
                     variant:'warning'
                 })
             );
+
         }
 
         this.selectedMap = {};
