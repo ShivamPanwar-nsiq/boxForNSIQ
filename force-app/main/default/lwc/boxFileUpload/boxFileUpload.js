@@ -57,11 +57,17 @@ export default class BoxFileUpload extends LightningElement {
             })
             .catch(error=>{
 
-                console.error(error);
+                console.error('Upload Error:', error);
+
+                let message = 'Unexpected error occurred';
+
+                if(error?.body?.message){
+                    message = error.body.message;
+                }
 
                 this.showToast(
                     'Error',
-                    'Unexpected error occurred while uploading ' + fileName,
+                    'Error uploading "' + fileName + '" : ' + message,
                     'error'
                 );
 
@@ -76,7 +82,9 @@ export default class BoxFileUpload extends LightningElement {
     }
 
     resetFileInput(){
+
         const input = this.template.querySelector('lightning-input');
+
         if(input){
             input.value = null;
         }

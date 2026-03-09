@@ -1,6 +1,5 @@
 public with sharing class BoxUploadController {
 
-    // RESPONSE WRAPPER
     public class UploadResponse{
         @AuraEnabled public Boolean success;
         @AuraEnabled public String message;
@@ -41,10 +40,15 @@ public with sharing class BoxUploadController {
 
             System.debug('Folder Id : ' + folderId);
 
-            uploadFile(folderId,fileName,fileBlob);
+            String result = uploadFile(folderId,fileName,fileBlob);
 
-            response.success = true;
-            response.message = 'File "' + fileName + '" uploaded successfully to Box';
+            if(result == 'SUCCESS'){
+                response.success = true;
+                response.message = 'File "' + fileName + '" uploaded successfully.';
+            }else{
+                response.success = false;
+                response.message = 'Error uploading "' + fileName + '" : ' + result;
+            }
 
         }
         catch(Exception e){
@@ -134,7 +138,7 @@ public with sharing class BoxUploadController {
         System.debug('Create Folder Response : ' + res.getBody());
 
         if(res.getStatusCode() != 201){
-            throw new AuraHandledException(res.getBody());
+            return 'Folder creation failed';
         }
 
         Map<String,Object> result =
@@ -162,9 +166,9 @@ public with sharing class BoxUploadController {
     }
 
     // FILE UPLOAD
-    public static void uploadFile(String folderId,
-                                  String fileName,
-                                  Blob fileBlob){
+    public static String uploadFile(String folderId,
+                                    String fileName,
+                                    Blob fileBlob){
 
         System.debug('Uploading File To Box');
 
@@ -202,8 +206,6 @@ public with sharing class BoxUploadController {
 
         if(res.getStatusCode() >= 300){
 
-            System.debug('BOX ERROR BODY : ' + res.getBody());
-
             String errorMessage = 'Box upload failed';
 
             try{
@@ -219,9 +221,9 @@ public with sharing class BoxUploadController {
                 System.debug('Error parsing Box response');
             }
 
-            System.debug('BOX ERROR MESSAGE : ' + errorMessage);
-
-            throw new AuraHandledException(errorMessage);
+            return errorMessage;
         }
+
+        return 'SUCCESS';
     }
 }
