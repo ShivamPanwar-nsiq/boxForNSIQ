@@ -1,75 +1,70 @@
 public with sharing class BoxUploadController {
 
-    /*
-    ============================================================
-    MAIN METHOD CALLED FROM LWC
-    ============================================================
-    This method receives:
-    recordId   -> Salesforce record
-    objectName -> Object API name (used as folder name)
-    fileName   -> Uploaded file name
-    base64Data -> File data from LWC
-    ============================================================
-    */
+    // RESPONSE WRAPPER
+    public class UploadResponse{
+        @AuraEnabled public Boolean success;
+        @AuraEnabled public String message;
+    }
 
     @AuraEnabled
-    public static String uploadFileToBox(String recordId,
-                                         String objectName,
-                                         String fileName,
-                                         String base64Data) {
+    public static UploadResponse uploadFileToBox(String recordId,
+                                                 String objectName,
+                                                 String fileName,
+                                                 String base64Data){
 
         System.debug('===== BOX UPLOAD START =====');
         System.debug('RecordId : ' + recordId);
         System.debug('ObjectName : ' + objectName);
         System.debug('FileName : ' + fileName);
 
+        UploadResponse response = new UploadResponse();
+
         try{
 
-            /* VALIDATIONS */
-
             if(String.isBlank(fileName)){
-                throw new AuraHandledException('File name missing');
+                response.success = false;
+                response.message = 'File name missing';
+                return response;
             }
 
             if(String.isBlank(base64Data)){
-                throw new AuraHandledException('File data missing');
+                response.success = false;
+                response.message = 'File data missing for ' + fileName;
+                return response;
             }
-
-            /* CONVERT BASE64 TO BLOB */
 
             Blob fileBlob = EncodingUtil.base64Decode(base64Data);
 
-            System.debug('File Size (bytes) : ' + fileBlob.size());
-
-            /* GET OR CREATE FOLDER */
+            System.debug('File Size : ' + fileBlob.size());
 
             String folderId = getOrCreateFolder(objectName);
 
             System.debug('Folder Id : ' + folderId);
 
-            /* UPLOAD FILE */
-
             uploadFile(folderId,fileName,fileBlob);
 
-            System.debug('===== FILE UPLOADED SUCCESSFULLY =====');
-
-            return 'File uploaded successfully to Box';
+            response.success = true;
+            response.message = 'File "' + fileName + '" uploaded successfully to Box';
 
         }
         catch(Exception e){
 
             System.debug('BOX ERROR : ' + e.getMessage());
 
-            throw new AuraHandledException(e.getMessage());
+            String message = e.getMessage();
+
+            if(String.isBlank(message)){
+                message = 'Unknown Box upload error';
+            }
+
+            response.success = false;
+            response.message = 'Error uploading "' + fileName + '" : ' + message;
         }
+
+        return response;
     }
 
-
-    /*
-    ============================================================
-    SEARCH FOLDER IN BOX
-    ============================================================
-    */
+    // SEARCH FOLDER
     public static String searchFolder(String folderName){
 
         System.debug('Searching Folder : ' + folderName);
@@ -112,18 +107,10 @@ public with sharing class BoxUploadController {
             return folderId;
         }
 
-        System.debug('Folder Not Found');
-
         return null;
     }
 
-
-    /*
-    ============================================================
-    CREATE FOLDER IN BOX
-    ============================================================
-    */
-
+    // CREATE FOLDER
     public static String createFolder(String folderName){
 
         System.debug('Creating Folder : ' + folderName);
@@ -160,13 +147,7 @@ public with sharing class BoxUploadController {
         return folderId;
     }
 
-
-    /*
-    ============================================================
-    GET EXISTING FOLDER OR CREATE NEW ONE
-    ============================================================
-    */
-
+    // GET OR CREATE FOLDER
     public static String getOrCreateFolder(String folderName){
 
         System.debug('GetOrCreateFolder : ' + folderName);
@@ -180,14 +161,7 @@ public with sharing class BoxUploadController {
         return createFolder(folderName);
     }
 
-
-
-    /*
-    ============================================================
-    FILE UPLOAD TO BOX
-    ============================================================
-    */
-
+    // FILE UPLOAD
     public static void uploadFile(String folderId,
                                   String fileName,
                                   Blob fileBlob){
@@ -228,14 +202,26 @@ public with sharing class BoxUploadController {
 
         if(res.getStatusCode() >= 300){
 
-            Map<String,Object> error =
-            (Map<String,Object>)JSON.deserializeUntyped(res.getBody());
+            System.debug('BOX ERROR BODY : ' + res.getBody());
 
-            if(error.containsKey('message')){
-                throw new AuraHandledException((String)error.get('message'));
+            String errorMessage = 'Box upload failed';
+
+            try{
+
+                Map<String,Object> error =
+                (Map<String,Object>)JSON.deserializeUntyped(res.getBody());
+
+                if(error.containsKey('message')){
+                    errorMessage = (String)error.get('message');
+                }
+
+            }catch(Exception ex){
+                System.debug('Error parsing Box response');
             }
 
-            throw new AuraHandledException('Box upload failed');
+            System.debug('BOX ERROR MESSAGE : ' + errorMessage);
+
+            throw new AuraHandledException(errorMessage);
         }
     }
 }

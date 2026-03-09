@@ -1,11 +1,9 @@
 public class BoxMultipartHelper {
 
     /*
-    ============================================================
-    BUILD MULTIPART REQUEST BODY
-    ============================================================
-    This matches exactly how Postman sends multipart/form-data
-    ============================================================
+    =====================================================
+    BUILD MULTIPART BODY
+    =====================================================
     */
 
     public static Blob buildMultipartBody(
@@ -45,11 +43,9 @@ public class BoxMultipartHelper {
 
 
     /*
-    ============================================================
-    BLOB CONCAT HELPER
-    ============================================================
-    Used to combine multiple blob parts
-    ============================================================
+    =====================================================
+    BLOB CONCAT
+    =====================================================
     */
 
     public static Blob concat(Blob a, Blob b){

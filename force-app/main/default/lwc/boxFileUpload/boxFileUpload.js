@@ -28,32 +28,40 @@ export default class BoxFileUpload extends LightningElement {
             const base64 = reader.result.split(',')[1];
 
             uploadFileToBox({
-                recordId:this.recordId,
-                objectName:this.objectApiName,
-                fileName:fileName,
-                base64Data:base64
+                recordId : this.recordId,
+                objectName : this.objectApiName,
+                fileName : fileName,
+                base64Data : base64
             })
             .then((result)=>{
 
-                this.showToast(
-                    'Success',
-                    result,
-                    'success'
-                );
+                if(result.success){
+
+                    this.showToast(
+                        'Success',
+                        result.message,
+                        'success'
+                    );
+
+                }else{
+
+                    this.showToast(
+                        'Error',
+                        result.message,
+                        'error'
+                    );
+                }
 
                 this.resetFileInput();
+
             })
             .catch(error=>{
 
-                let message = 'Upload Failed';
-
-                if(error?.body?.message){
-                    message = error.body.message;
-                }
+                console.error(error);
 
                 this.showToast(
                     'Error',
-                    message,
+                    'Unexpected error occurred while uploading ' + fileName,
                     'error'
                 );
 
@@ -78,9 +86,9 @@ export default class BoxFileUpload extends LightningElement {
 
         this.dispatchEvent(
             new ShowToastEvent({
-                title:title,
-                message:message,
-                variant:variant
+                title : title,
+                message : message,
+                variant : variant
             })
         );
     }
