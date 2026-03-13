@@ -24,7 +24,14 @@ public with sharing class BoxUploadController {
 
             Blob fileBlob = EncodingUtil.base64Decode(base64Data);
 
-            String folderId = getOrCreateFolder(objectName);
+            // REMOVE __c FROM CUSTOM OBJECT
+            String cleanObjectName = objectName;
+
+            if(cleanObjectName.endsWith('__c')){
+                cleanObjectName = cleanObjectName.replace('__c','');
+            }
+
+            String folderId = getOrCreateFolder(cleanObjectName);
 
             if(folderId == null){
                 response.success = false;
@@ -124,7 +131,6 @@ public with sharing class BoxUploadController {
 
         System.debug('Create Folder Response: ' + res.getBody());
 
-        // SUCCESS
         if(res.getStatusCode() == 201){
 
             Map<String,Object> result =
@@ -133,7 +139,6 @@ public with sharing class BoxUploadController {
             return (String)result.get('id');
         }
 
-        // FOLDER ALREADY EXISTS
         if(res.getStatusCode() == 409){
 
             Map<String,Object> result =
