@@ -13,11 +13,11 @@ export default class BoxFileUpload extends LightningElement {
     fileName;
     base64Data;
 
-    handleUpload(event){
+    handleUpload(event) {
 
         const file = event.target.files[0];
 
-        if(!file){
+        if (!file) {
             return;
         }
 
@@ -36,22 +36,22 @@ export default class BoxFileUpload extends LightningElement {
         reader.readAsDataURL(file);
     }
 
-    uploadFile(overwrite){
+    uploadFile(overwrite) {
 
         this.isUploading = true;
 
         uploadFileToBox({
 
-            recordId : this.recordId,
-            objectName : this.objectApiName,
-            fileName : this.fileName,
-            base64Data : this.base64Data,
-            overwrite : overwrite
+            recordId: this.recordId,
+            objectName: this.objectApiName,
+            fileName: this.fileName,
+            base64Data: this.base64Data,
+            overwrite: overwrite
 
         })
         .then(result => {
 
-            if(result.success){
+            if (result.success) {
 
                 this.showToast(
                     'Success',
@@ -61,17 +61,22 @@ export default class BoxFileUpload extends LightningElement {
 
                 this.resetFileInput();
 
-            }else{
+            } 
+            else {
 
-                if(result.message.includes('already exists')){
+                if (result.message.includes('already exists')) {
+
                     this.showModal = true;
-                }
-                else{
+
+                } 
+                else {
+
                     this.showToast(
                         'Error',
                         result.message,
                         'error'
                     );
+
                 }
             }
 
@@ -80,26 +85,27 @@ export default class BoxFileUpload extends LightningElement {
 
             this.showToast(
                 'Error',
-                error.body.message,
+                error?.body?.message || 'Unknown error',
                 'error'
             );
 
         })
-        .finally(()=>{
+        .finally(() => {
 
             this.isUploading = false;
 
         });
     }
 
-    handleYes(){
+    handleYes() {
 
         this.showModal = false;
 
         this.uploadFile(true);
+
     }
 
-    handleNo(){
+    handleNo() {
 
         this.showModal = false;
 
@@ -110,27 +116,30 @@ export default class BoxFileUpload extends LightningElement {
             'File upload cancelled',
             'warning'
         );
+
     }
 
-    resetFileInput(){
+    resetFileInput() {
 
         const input = this.template.querySelector('lightning-input');
 
-        if(input){
+        if (input) {
             input.value = null;
         }
+
     }
 
-    showToast(title,message,variant){
+    showToast(title, message, variant) {
 
         this.dispatchEvent(
 
             new ShowToastEvent({
-                title : title,
-                message : message,
-                variant : variant
+                title: title,
+                message: message,
+                variant: variant
             })
 
         );
+
     }
 }
