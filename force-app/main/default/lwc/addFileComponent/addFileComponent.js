@@ -261,7 +261,13 @@ export default class AddFileComponent extends LightningElement {
                 })
             );
 
-            this.dispatchEvent(new CustomEvent('filessaved'));
+            //this.dispatchEvent(new CustomEvent('filessaved'));
+            this.dispatchEvent(
+    new CustomEvent('filessaved', {
+        bubbles: true,
+        composed: true
+    })
+);
 
         })
         .catch(error=>{

@@ -49,7 +49,7 @@ public with sharing class BoxFileController {
         return 'Files add successfully';
     }
 
-     @AuraEnabled(cacheable=true)
+     @AuraEnabled
     public static List<Box_File__c> getBoxFiles(Id recordId){
 
         return [
