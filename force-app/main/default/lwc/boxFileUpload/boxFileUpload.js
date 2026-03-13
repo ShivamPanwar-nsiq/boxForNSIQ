@@ -8,6 +8,10 @@ export default class BoxFileUpload extends LightningElement {
     @api objectApiName;
 
     @track isUploading = false;
+    @track showModal = false;
+
+    fileName;
+    base64Data;
 
     handleUpload(event){
 
@@ -17,68 +21,95 @@ export default class BoxFileUpload extends LightningElement {
             return;
         }
 
-        const fileName = file.name;
+        this.fileName = file.name;
 
         const reader = new FileReader();
 
-        this.isUploading = true;
-
         reader.onload = () => {
 
-            const base64 = reader.result.split(',')[1];
+            this.base64Data = reader.result.split(',')[1];
 
-            uploadFileToBox({
-                recordId : this.recordId,
-                objectName : this.objectApiName,
-                fileName : fileName,
-                base64Data : base64
-            })
-            .then((result)=>{
+            this.uploadFile(false);
 
-                if(result.success){
+        };
 
-                    this.showToast(
-                        'Success',
-                        result.message,
-                        'success'
-                    );
+        reader.readAsDataURL(file);
+    }
 
-                }else{
+    uploadFile(overwrite){
 
+        this.isUploading = true;
+
+        uploadFileToBox({
+
+            recordId : this.recordId,
+            objectName : this.objectApiName,
+            fileName : this.fileName,
+            base64Data : this.base64Data,
+            overwrite : overwrite
+
+        })
+        .then(result => {
+
+            if(result.success){
+
+                this.showToast(
+                    'Success',
+                    result.message,
+                    'success'
+                );
+
+                this.resetFileInput();
+
+            }else{
+
+                if(result.message.includes('already exists')){
+                    this.showModal = true;
+                }
+                else{
                     this.showToast(
                         'Error',
                         result.message,
                         'error'
                     );
                 }
+            }
 
-                this.resetFileInput();
+        })
+        .catch(error => {
 
-            })
-            .catch(error=>{
+            this.showToast(
+                'Error',
+                error.body.message,
+                'error'
+            );
 
-                console.error('Upload Error:', error);
+        })
+        .finally(()=>{
 
-                let message = 'Unexpected error occurred';
+            this.isUploading = false;
 
-                if(error?.body?.message){
-                    message = error.body.message;
-                }
+        });
+    }
 
-                this.showToast(
-                    'Error',
-                    'Error uploading "' + fileName + '" : ' + message,
-                    'error'
-                );
+    handleYes(){
 
-            })
-            .finally(()=>{
-                this.isUploading = false;
-            });
+        this.showModal = false;
 
-        };
+        this.uploadFile(true);
+    }
 
-        reader.readAsDataURL(file);
+    handleNo(){
+
+        this.showModal = false;
+
+        this.resetFileInput();
+
+        this.showToast(
+            'Cancelled',
+            'File upload cancelled',
+            'warning'
+        );
     }
 
     resetFileInput(){
@@ -93,11 +124,13 @@ export default class BoxFileUpload extends LightningElement {
     showToast(title,message,variant){
 
         this.dispatchEvent(
+
             new ShowToastEvent({
                 title : title,
                 message : message,
                 variant : variant
             })
+
         );
     }
 }

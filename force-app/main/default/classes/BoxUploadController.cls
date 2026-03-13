@@ -3,18 +3,14 @@ public with sharing class BoxUploadController {
     public class UploadResponse{
         @AuraEnabled public Boolean success;
         @AuraEnabled public String message;
-    }
+    } 
 
     @AuraEnabled
     public static UploadResponse uploadFileToBox(String recordId,
                                                  String objectName,
                                                  String fileName,
-                                                 String base64Data){
-
-        System.debug('===== BOX UPLOAD START =====');
-        System.debug('RecordId : ' + recordId);
-        System.debug('ObjectName : ' + objectName);
-        System.debug('FileName : ' + fileName);
+                                                 String base64Data,
+                                                 Boolean overwrite){
 
         UploadResponse response = new UploadResponse();
 
@@ -26,43 +22,44 @@ public with sharing class BoxUploadController {
                 return response;
             }
 
-            if(String.isBlank(base64Data)){
-                response.success = false;
-                response.message = 'File data missing for ' + fileName;
-                return response;
-            }
-
             Blob fileBlob = EncodingUtil.base64Decode(base64Data);
-
-            System.debug('File Size : ' + fileBlob.size());
 
             String folderId = getOrCreateFolder(objectName);
 
-            System.debug('Folder Id : ' + folderId);
+            if(folderId == null){
+                response.success = false;
+                response.message = 'Unable to find or create folder';
+                return response;
+            }
 
-            String result = uploadFile(folderId,fileName,fileBlob);
+            String existingFileId = getExistingFileId(folderId,fileName);
+
+            if(existingFileId != null && !overwrite){
+                response.success = false;
+                response.message = 'File already exists';
+                return response;
+            }
+
+            String result;
+
+            if(existingFileId != null && overwrite){
+                result = updateFile(existingFileId,fileName,fileBlob);
+            }else{
+                result = uploadFile(folderId,fileName,fileBlob);
+            }
 
             if(result == 'SUCCESS'){
                 response.success = true;
-                response.message = 'File "' + fileName + '" uploaded successfully.';
+                response.message = fileName + ' uploaded successfully';
             }else{
                 response.success = false;
-                response.message = 'Error uploading "' + fileName + '" : ' + result;
+                response.message = result;
             }
 
         }
         catch(Exception e){
-
-            System.debug('BOX ERROR : ' + e.getMessage());
-
-            String message = e.getMessage();
-
-            if(String.isBlank(message)){
-                message = 'Unknown Box upload error';
-            }
-
             response.success = false;
-            response.message = 'Error uploading "' + fileName + '" : ' + message;
+            response.message = e.getMessage();
         }
 
         return response;
@@ -70,8 +67,6 @@ public with sharing class BoxUploadController {
 
     // SEARCH FOLDER
     public static String searchFolder(String folderName){
-
-        System.debug('Searching Folder : ' + folderName);
 
         HttpRequest req = new HttpRequest();
 
@@ -82,12 +77,12 @@ public with sharing class BoxUploadController {
         );
 
         req.setMethod('GET');
+        req.setTimeout(120000);
 
         Http http = new Http();
         HttpResponse res = http.send(req);
 
-        System.debug('Search Folder Status : ' + res.getStatusCode());
-        System.debug('Search Folder Response : ' + res.getBody());
+        System.debug('Search Folder Response: ' + res.getBody());
 
         if(res.getStatusCode() != 200){
             return null;
@@ -104,11 +99,7 @@ public with sharing class BoxUploadController {
             Map<String,Object> folder =
             (Map<String,Object>)entries[0];
 
-            String folderId = (String)folder.get('id');
-
-            System.debug('Folder Found Id : ' + folderId);
-
-            return folderId;
+            return (String)folder.get('id');
         }
 
         return null;
@@ -117,15 +108,12 @@ public with sharing class BoxUploadController {
     // CREATE FOLDER
     public static String createFolder(String folderName){
 
-        System.debug('Creating Folder : ' + folderName);
-
         HttpRequest req = new HttpRequest();
 
         req.setEndpoint('callout:Box_API/2.0/folders');
-
         req.setMethod('POST');
-
         req.setHeader('Content-Type','application/json');
+        req.setTimeout(120000);
 
         req.setBody(
             '{"name":"'+folderName+'","parent":{"id":"0"}}'
@@ -134,27 +122,43 @@ public with sharing class BoxUploadController {
         Http http = new Http();
         HttpResponse res = http.send(req);
 
-        System.debug('Create Folder Status : ' + res.getStatusCode());
-        System.debug('Create Folder Response : ' + res.getBody());
+        System.debug('Create Folder Response: ' + res.getBody());
 
-        if(res.getStatusCode() != 201){
-            return 'Folder creation failed';
+        // SUCCESS
+        if(res.getStatusCode() == 201){
+
+            Map<String,Object> result =
+            (Map<String,Object>)JSON.deserializeUntyped(res.getBody());
+
+            return (String)result.get('id');
         }
 
-        Map<String,Object> result =
-        (Map<String,Object>)JSON.deserializeUntyped(res.getBody());
+        // FOLDER ALREADY EXISTS
+        if(res.getStatusCode() == 409){
 
-        String folderId = (String)result.get('id');
+            Map<String,Object> result =
+            (Map<String,Object>)JSON.deserializeUntyped(res.getBody());
 
-        System.debug('New Folder Id : ' + folderId);
+            Map<String,Object> context =
+            (Map<String,Object>)result.get('context_info');
 
-        return folderId;
+            List<Object> conflicts =
+            (List<Object>)context.get('conflicts');
+
+            if(conflicts != null && conflicts.size() > 0){
+
+                Map<String,Object> folder =
+                (Map<String,Object>)conflicts[0];
+
+                return (String)folder.get('id');
+            }
+        }
+
+        return null;
     }
 
     // GET OR CREATE FOLDER
     public static String getOrCreateFolder(String folderName){
-
-        System.debug('GetOrCreateFolder : ' + folderName);
 
         String folderId = searchFolder(folderName);
 
@@ -165,16 +169,50 @@ public with sharing class BoxUploadController {
         return createFolder(folderName);
     }
 
-    // FILE UPLOAD
+    // FIND EXISTING FILE
+    public static String getExistingFileId(String folderId,String fileName){
+
+        HttpRequest req = new HttpRequest();
+
+        req.setEndpoint(
+            'callout:Box_API/2.0/folders/' + folderId + '/items'
+        );
+
+        req.setMethod('GET');
+        req.setTimeout(120000);
+
+        Http http = new Http();
+        HttpResponse res = http.send(req);
+
+        if(res.getStatusCode() != 200){
+            return null;
+        }
+
+        Map<String,Object> result =
+        (Map<String,Object>)JSON.deserializeUntyped(res.getBody());
+
+        List<Object> entries =
+        (List<Object>)result.get('entries');
+
+        for(Object obj : entries){
+
+            Map<String,Object> file =
+            (Map<String,Object>)obj;
+
+            if((String)file.get('name') == fileName){
+                return (String)file.get('id');
+            }
+        }
+
+        return null;
+    }
+
+    // UPLOAD FILE
     public static String uploadFile(String folderId,
                                     String fileName,
                                     Blob fileBlob){
 
-        System.debug('Uploading File To Box');
-
         String boundary = 'boundary_' + String.valueOf(Crypto.getRandomInteger());
-
-        System.debug('Boundary : ' + boundary);
 
         Blob finalBody = BoxMultipartHelper.buildMultipartBody(
             folderId,
@@ -186,6 +224,47 @@ public with sharing class BoxUploadController {
         HttpRequest req = new HttpRequest();
 
         req.setEndpoint('callout:Box_Upload/api/2.0/files/content');
+        req.setMethod('POST');
+
+        req.setHeader(
+            'Content-Type',
+            'multipart/form-data; boundary=' + boundary
+        );
+
+        req.setBodyAsBlob(finalBody);
+        req.setTimeout(120000);
+
+        Http http = new Http();
+        HttpResponse res = http.send(req);
+
+        System.debug('Upload Response: ' + res.getBody());
+
+        if(res.getStatusCode() >= 300){
+            return 'Upload failed: ' + res.getBody();
+        }
+
+        return 'SUCCESS';
+    }
+
+    // OVERWRITE FILE
+    public static String updateFile(String fileId,
+                                    String fileName,
+                                    Blob fileBlob){
+
+        String boundary = 'boundary_' + String.valueOf(Crypto.getRandomInteger());
+
+        Blob finalBody = BoxMultipartHelper.buildMultipartBody(
+            null,
+            fileName,
+            fileBlob,
+            boundary
+        );
+
+        HttpRequest req = new HttpRequest();
+
+        req.setEndpoint(
+            'callout:Box_Upload/api/2.0/files/' + fileId + '/content'
+        );
 
         req.setMethod('POST');
 
@@ -194,34 +273,16 @@ public with sharing class BoxUploadController {
             'multipart/form-data; boundary=' + boundary
         );
 
-        req.setHeader('Accept','application/json');
-
         req.setBodyAsBlob(finalBody);
+        req.setTimeout(120000);
 
         Http http = new Http();
         HttpResponse res = http.send(req);
 
-        System.debug('BOX STATUS : ' + res.getStatusCode());
-        System.debug('BOX RESPONSE : ' + res.getBody());
+        System.debug('Overwrite Response: ' + res.getBody());
 
         if(res.getStatusCode() >= 300){
-
-            String errorMessage = 'Box upload failed';
-
-            try{
-
-                Map<String,Object> error =
-                (Map<String,Object>)JSON.deserializeUntyped(res.getBody());
-
-                if(error.containsKey('message')){
-                    errorMessage = (String)error.get('message');
-                }
-
-            }catch(Exception ex){
-                System.debug('Error parsing Box response');
-            }
-
-            return errorMessage;
+            return 'Overwrite failed: ' + res.getBody();
         }
 
         return 'SUCCESS';

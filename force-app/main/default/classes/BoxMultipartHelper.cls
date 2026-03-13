@@ -1,11 +1,5 @@
 public class BoxMultipartHelper {
 
-    /*
-    =====================================================
-    BUILD MULTIPART BODY
-    =====================================================
-    */
-
     public static Blob buildMultipartBody(
         String folderId,
         String fileName,
@@ -15,8 +9,15 @@ public class BoxMultipartHelper {
 
         System.debug('Building Multipart Body');
 
-        String attributes =
-        '{"name":"' + fileName + '","parent":{"id":"' + folderId + '"}}';
+        String attributes;
+
+        if(folderId != null){
+            attributes =
+            '{"name":"' + fileName + '","parent":{"id":"' + folderId + '"}}';
+        }else{
+            attributes =
+            '{"name":"' + fileName + '"}';
+        }
 
         String part1 =
         '--' + boundary + '\r\n' +
@@ -40,13 +41,6 @@ public class BoxMultipartHelper {
 
         return body;
     }
-
-
-    /*
-    =====================================================
-    BLOB CONCAT
-    =====================================================
-    */
 
     public static Blob concat(Blob a, Blob b){
 
