@@ -1,7 +1,8 @@
 import { LightningElement, track, api } from 'lwc';
 import getBoxItems from '@salesforce/apex/BoxController.getBoxItems';
-import { addFiles } from 'c/boxFileStore';
+//import { addFiles } from 'c/boxFileStore';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
+import saveBoxFiles from '@salesforce/apex/BoxFileController.saveBoxFiles';
 
 export default class AddFileComponent extends LightningElement {
 
@@ -219,50 +220,45 @@ export default class AddFileComponent extends LightningElement {
 
     }
 
-    handleAddToSalesforce(){
+  handleAddToSalesforce(){
 
-        const selectedFiles = this.items
-        .filter(i => i.isFile && this.selectedMap[i.id])
-        .map(i => ({
-            id:i.id,
-            name:i.name,
-            url:i.url,
-            size:i.sizeDisplay,
-            modified:i.modifiedDisplay
-        }));
+    const selectedFiles = this.items
+    .filter(i => i.isFile && this.selectedMap[i.id])
+    .map(i => ({
+        Name: i.name,
+        Box_File_Id__c: i.id,
+        File_URL__c: i.url,
+        Size__c: i.sizeDisplay,
+        Modified_Date__c: i.modifiedDisplay,
+        Parent_Record__c: this.recordId
+    }));
 
-        const result = addFiles(selectedFiles);
+    saveBoxFiles({ files:selectedFiles })
+    .then(()=>{
 
-        if(result.added > 0){
+        this.dispatchEvent(
+            new ShowToastEvent({
+                title:'Success',
+                message:'Files saved successfully',
+                variant:'success'
+            })
+        );
 
-            this.dispatchEvent(
-                new ShowToastEvent({
-                    title:'Success',
-                    message:`${result.added} file(s) added successfully`,
-                    variant:'success'
-                })
-            );
+        this.dispatchEvent(new CustomEvent('filessaved'));
 
-        }
+    })
+    .catch(error=>{
 
-        if(result.duplicates > 0){
+        this.dispatchEvent(
+            new ShowToastEvent({
+                title:'Error',
+                message:error.body.message,
+                variant:'error'
+            })
+        );
 
-            this.dispatchEvent(
-                new ShowToastEvent({
-                    title:'Duplicate Files',
-                    message:`${result.duplicates} file(s) already exist`,
-                    variant:'warning'
-                })
-            );
+    });
 
-        }
-
-        this.selectedMap = {};
-
-        this.items = this.items.map(i=>{
-            return {...i,checked:false};
-        });
-
-    }
+}
 
 }
