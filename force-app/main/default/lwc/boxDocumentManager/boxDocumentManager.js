@@ -1,8 +1,6 @@
 import { LightningElement, track, api } from 'lwc';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 
-import { registerListener, getFiles } from 'c/boxFileStore';
-
 import updateStorageSelection from '@salesforce/apex/StorageAuthController.updateStorageSelection';
 import getSelectedStorage from '@salesforce/apex/StorageAuthController.getSelectedStorage';
 
@@ -26,58 +24,8 @@ export default class BoxDocumentManager extends LightningElement {
         { label: 'Dropbox', value: 'dropbox' }
     ];
 
-    connectedCallback(){
-
-        // Load stored files
-        this.loadFiles();
-
-        // Load storage selection
+    connectedCallback() {
         this.loadStorage();
-
-        // Listener for global store updates (optional)
-        this.files = getFiles();
-
-        registerListener((updatedFiles)=>{
-            this.files = [...updatedFiles];
-        });
-
-    }
-
-   loadFiles(){
-
-    getBoxFiles({ recordId: this.recordId })
-    .then(result => {
-
-        const mappedFiles = result.map(file => ({
-            id: file.Box_File_Id__c,
-            name: file.Name,
-            url: file.File_URL__c,
-            size: file.Size__c
-        }));
-
-        // force re-render
-        this.files = [...mappedFiles];
-
-    })
-    .catch(error=>{
-        console.error('Error loading files', error);
-    });
-
-}
-
-    handleFilesSaved(){
-
-        // Close modal
-        this.showModal = false;
-
-        // Reload files immediately
-        this.loadFiles();
-         // Wait for Apex commit
-   // setTimeout(() => {
-       // this.loadFiles();
-   // }, 1000);
-
-       
     }
 
     loadStorage(){
@@ -93,12 +41,59 @@ export default class BoxDocumentManager extends LightningElement {
                     this.checkBoxAuth();
                 }
 
+                this.loadFiles();
             }
 
         })
         .catch(error=>{
             console.error(error);
         });
+
+    }
+
+    loadFiles(){
+
+        if(this.selectedStorage === 'box'){
+
+            getBoxFiles({ recordId: this.recordId })
+            .then(result => {
+
+                const mappedFiles = result.map(file => ({
+                    id: file.Box_File_Id__c,
+                    name: file.Name,
+                    url: file.File_URL__c,
+                    size: file.Size__c
+                }));
+
+                this.files = [...mappedFiles];
+
+            })
+            .catch(error=>{
+                console.error('Error loading Box files', error);
+            });
+
+        }
+
+        else if(this.selectedStorage === 'google'){
+
+            // future google integration
+            this.files = [];
+
+        }
+
+        else if(this.selectedStorage === 'dropbox'){
+
+            // future dropbox integration
+            this.files = [];
+
+        }
+
+    }
+
+    handleFilesSaved(){
+
+        this.showModal = false;
+        this.loadFiles();
 
     }
 
@@ -138,6 +133,8 @@ export default class BoxDocumentManager extends LightningElement {
             this.checkBoxAuth();
         }
 
+        this.loadFiles();
+
     }
 
     get addFileLabel(){
@@ -147,6 +144,18 @@ export default class BoxDocumentManager extends LightningElement {
         }
 
         return 'Add File (' + this.selectedStorageLabel + ')';
+
+    }
+
+    get selectedFilesTitle(){
+
+        const map = {
+            box : 'Selected Box Files',
+            google : 'Selected Google Drive Files',
+            dropbox : 'Selected Dropbox Files'
+        };
+
+        return map[this.selectedStorage];
 
     }
 

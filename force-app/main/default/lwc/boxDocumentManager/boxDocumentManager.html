@@ -35,7 +35,7 @@
 
 <template if:true={files.length}>
 
-    <lightning-card title="Selected Box Files">
+    <lightning-card title={selectedFilesTitle}>
 
         <div class="slds-p-around_medium">
 
@@ -78,11 +78,11 @@
 
                 <template if:true={isBox}>
 
-                  <c-add-file-component
-    record-id={recordId}
-    object-api-name={objectApiName}
-    onfilessaved={handleFilesSaved}>
-</c-add-file-component>
+                    <c-add-file-component
+                        record-id={recordId}
+                        object-api-name={objectApiName}
+                        onfilessaved={handleFilesSaved}>
+                    </c-add-file-component>
 
                 </template>
 
