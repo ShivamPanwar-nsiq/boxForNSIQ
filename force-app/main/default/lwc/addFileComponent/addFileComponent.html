@@ -2,16 +2,43 @@
 
     <lightning-card title={cardTitle}>
 
-        <!-- Back Button -->
-        <template if:true={showBackButton}>
-            <div class="slds-m-around_small">
+        <!-- Spinner -->
+        <template if:true={isLoading}>
+            <lightning-spinner alternative-text="Loading"></lightning-spinner>
+        </template>
+
+        <!-- Header -->
+        <div class="slds-grid slds-grid_align-spread slds-m-around_small">
+
+            <template if:true={showBackButton}>
                 <lightning-button
                     label="Back"
+                    icon-name="utility:back"
                     onclick={goBack}>
                 </lightning-button>
+            </template>
+
+            <lightning-button
+                label="Upload File"
+                icon-name="utility:upload"
+                variant="brand"
+                onclick={openUpload}>
+            </lightning-button>
+
+        </div>
+
+        <!-- Upload -->
+        <template if:true={showUpload}>
+            <div class="slds-box slds-theme_default slds-m-around_small">
+                <c-box-file-upload
+                    record-id={recordId}
+                    object-api-name={objectApiName}
+                    onuploadcomplete={handleUploadComplete}>
+                </c-box-file-upload>
             </div>
         </template>
 
+        <!-- Table -->
         <div class="slds-m-around_small">
 
             <table class="slds-table slds-table_cell-buffer slds-table_bordered">
@@ -36,13 +63,16 @@
                             data-url={item.url}>
 
                             <td>
+
                                 <lightning-input
                                     type="checkbox"
                                     checked={item.checked}
                                     data-id={item.id}
                                     data-type={item.type}
-                                    onchange={handleCheckbox}>
+                                    onchange={handleCheckbox}
+                                    onclick={stopPropagation}>
                                 </lightning-input>
+
                             </td>
 
                             <td onclick={handleClick} style="cursor:pointer">
