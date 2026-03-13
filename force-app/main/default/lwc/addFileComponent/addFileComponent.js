@@ -1,8 +1,7 @@
 import { LightningElement, track, api } from 'lwc';
 import getBoxItems from '@salesforce/apex/BoxController.getBoxItems';
-//import { addFiles } from 'c/boxFileStore';
-import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import saveBoxFiles from '@salesforce/apex/BoxFileController.saveBoxFiles';
+import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 
 export default class AddFileComponent extends LightningElement {
 
@@ -220,45 +219,60 @@ export default class AddFileComponent extends LightningElement {
 
     }
 
-  handleAddToSalesforce(){
+    handleAddToSalesforce(){
 
-    const selectedFiles = this.items
-    .filter(i => i.isFile && this.selectedMap[i.id])
-    .map(i => ({
-        Name: i.name,
-        Box_File_Id__c: i.id,
-        File_URL__c: i.url,
-        Size__c: i.sizeDisplay,
-        Modified_Date__c: i.modifiedDisplay,
-        Parent_Record__c: this.recordId
-    }));
+        const selectedFiles = this.items
+        .filter(i => i.isFile && this.selectedMap[i.id])
+        .map(i => ({
+            Name: i.name,
+            Box_File_Id__c: i.id,
+            File_URL__c: i.url,
+            Size__c: i.sizeDisplay,
+            Modified_Date__c: i.modifiedDisplay,
+            Parent_Record__c: this.recordId
+        }));
 
-    saveBoxFiles({ files:selectedFiles })
-    .then(()=>{
+        if(selectedFiles.length === 0){
 
-        this.dispatchEvent(
-            new ShowToastEvent({
-                title:'Success',
-                message:'Files saved successfully',
-                variant:'success'
-            })
-        );
+            this.dispatchEvent(
+                new ShowToastEvent({
+                    title:'Warning',
+                    message:'Please select at least one file',
+                    variant:'warning'
+                })
+            );
 
-        this.dispatchEvent(new CustomEvent('filessaved'));
+            return;
+        }
 
-    })
-    .catch(error=>{
+        saveBoxFiles({ files:selectedFiles })
+        .then((result)=>{
 
-        this.dispatchEvent(
-            new ShowToastEvent({
-                title:'Error',
-                message:error.body.message,
-                variant:'error'
-            })
-        );
+            this.selectedMap = {};
 
-    });
+            this.dispatchEvent(
+                new ShowToastEvent({
+                    title:'Success',
+                    message: result,
+                    variant:'success'
+                })
+            );
 
-}
+            this.dispatchEvent(new CustomEvent('filessaved'));
+
+        })
+        .catch(error=>{
+
+            this.dispatchEvent(
+                new ShowToastEvent({
+                    title:'Error',
+                    message:error.body?.message || 'Something went wrong',
+                    variant:'error'
+                })
+            );
+
+        });
+
+    }
 
 }
