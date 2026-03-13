@@ -1,6 +1,6 @@
 public with sharing class BoxController {
 
-    @AuraEnabled(cacheable=true)
+    @AuraEnabled
     public static List<Map<String,String>> getBoxItems(String folderId) {
 
         Http http = new Http();

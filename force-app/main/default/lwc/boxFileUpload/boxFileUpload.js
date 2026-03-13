@@ -61,6 +61,11 @@ export default class BoxFileUpload extends LightningElement {
 
                 this.resetFileInput();
 
+                // 🔹 IMPORTANT: Notify parent component
+                this.dispatchEvent(
+                    new CustomEvent('uploadcomplete')
+                );
+
             } 
             else {
 

@@ -46,7 +46,10 @@ export default class AddFileComponent extends LightningElement {
 
     handleUploadComplete(){
         this.showUpload = false;
+        //this.loadItems();
+        setTimeout(() => {
         this.loadItems();
+    }, 800);
     }
 
     loadItems(){
