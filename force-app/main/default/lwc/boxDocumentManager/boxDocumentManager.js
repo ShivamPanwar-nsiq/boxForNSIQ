@@ -7,7 +7,6 @@ import updateStorageSelection from '@salesforce/apex/StorageAuthController.updat
 import getSelectedStorage from '@salesforce/apex/StorageAuthController.getSelectedStorage';
 
 import isBoxAuthenticated from '@salesforce/apex/BoxService.isBoxAuthenticated';
-
 import getBoxFiles from '@salesforce/apex/BoxFileController.getBoxFiles';
 
 export default class BoxDocumentManager extends LightningElement {
@@ -29,38 +28,57 @@ export default class BoxDocumentManager extends LightningElement {
 
     connectedCallback(){
 
+        // Load stored files
+        this.loadFiles();
+
+        // Load storage selection
+        this.loadStorage();
+
+        // Listener for global store updates (optional)
         this.files = getFiles();
 
         registerListener((updatedFiles)=>{
             this.files = [...updatedFiles];
         });
-        this.loadFiles()
-        this.loadStorage();
 
     }
-    loadFiles(){
 
-    getBoxFiles({ recordId:this.recordId })
+   loadFiles(){
+
+    getBoxFiles({ recordId: this.recordId })
     .then(result => {
 
-        this.files = result.map(file => ({
-            id:file.Box_File_Id__c,
-            name:file.Name,
-            url:file.File_URL__c,
-            size:file.Size__c
+        const mappedFiles = result.map(file => ({
+            id: file.Box_File_Id__c,
+            name: file.Name,
+            url: file.File_URL__c,
+            size: file.Size__c
         }));
+
+        // force re-render
+        this.files = [...mappedFiles];
 
     })
     .catch(error=>{
-        console.error(error);
+        console.error('Error loading files', error);
     });
 
 }
-handleFilesSaved(){
 
-    this.loadFiles();
+    handleFilesSaved(){
 
-}
+        // Close modal
+        this.showModal = false;
+
+        // Reload files immediately
+        this.loadFiles();
+         // Wait for Apex commit
+   // setTimeout(() => {
+       // this.loadFiles();
+   // }, 1000);
+
+       
+    }
 
     loadStorage(){
 
@@ -113,7 +131,7 @@ handleFilesSaved(){
         this.selectedStorage = event.detail.value;
 
         updateStorageSelection({
-            storageType:this.selectedStorage
+            storageType: this.selectedStorage
         });
 
         if(this.selectedStorage === 'box'){
