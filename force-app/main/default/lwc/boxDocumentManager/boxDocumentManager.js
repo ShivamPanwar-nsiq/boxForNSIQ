@@ -8,6 +8,8 @@ import getSelectedStorage from '@salesforce/apex/StorageAuthController.getSelect
 
 import isBoxAuthenticated from '@salesforce/apex/BoxService.isBoxAuthenticated';
 
+import getBoxFiles from '@salesforce/apex/BoxFileController.getBoxFiles';
+
 export default class BoxDocumentManager extends LightningElement {
 
     @api recordId;
@@ -32,10 +34,33 @@ export default class BoxDocumentManager extends LightningElement {
         registerListener((updatedFiles)=>{
             this.files = [...updatedFiles];
         });
-
+        this.loadFiles()
         this.loadStorage();
 
     }
+    loadFiles(){
+
+    getBoxFiles({ recordId:this.recordId })
+    .then(result => {
+
+        this.files = result.map(file => ({
+            id:file.Box_File_Id__c,
+            name:file.Name,
+            url:file.File_URL__c,
+            size:file.Size__c
+        }));
+
+    })
+    .catch(error=>{
+        console.error(error);
+    });
+
+}
+handleFilesSaved(){
+
+    this.loadFiles();
+
+}
 
     loadStorage(){
 
