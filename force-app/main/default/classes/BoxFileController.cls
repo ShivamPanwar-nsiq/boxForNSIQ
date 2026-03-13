@@ -1,10 +1,10 @@
 public with sharing class BoxFileController {
 
     @AuraEnabled
-    public static void saveBoxFiles(List<Box_File__c> files){
+    public static String saveBoxFiles(List<Box_File__c> files){
 
-        if(files.isEmpty()){
-            return;
+        if(files == null || files.isEmpty()){
+            return 'No files selected';
         }
 
         Id recordId = files[0].Parent_Record__c;
@@ -15,7 +15,6 @@ public with sharing class BoxFileController {
             boxIds.add(f.Box_File_Id__c);
         }
 
-        // Check existing files
         List<Box_File__c> existingFiles = [
             SELECT Id, Name, Box_File_Id__c
             FROM Box_File__c
@@ -23,24 +22,34 @@ public with sharing class BoxFileController {
             AND Box_File_Id__c IN :boxIds
         ];
 
-        if(!existingFiles.isEmpty()){
+        Set<String> existingIds = new Set<String>();
+        List<String> duplicateNames = new List<String>();
 
-            List<String> names = new List<String>();
-
-            for(Box_File__c bf : existingFiles){
-                names.add(bf.Name);
-            }
-
-            throw new AuraHandledException(
-                'Duplicate file(s) already exist: ' + String.join(names, ', ')
-            );
+        for(Box_File__c bf : existingFiles){
+            existingIds.add(bf.Box_File_Id__c);
+            duplicateNames.add(bf.Name);
         }
 
-        insert files;
+        List<Box_File__c> filesToInsert = new List<Box_File__c>();
+
+        for(Box_File__c f : files){
+            if(!existingIds.contains(f.Box_File_Id__c)){
+                filesToInsert.add(f);
+            }
+        }
+
+        if(!filesToInsert.isEmpty()){
+            insert filesToInsert;
+        }
+
+        if(!duplicateNames.isEmpty()){
+            return 'Duplicate skipped: ' + String.join(duplicateNames, ', ');
+        }
+
+        return 'Files add successfully';
     }
 
-
-    @AuraEnabled(cacheable=true)
+     @AuraEnabled(cacheable=true)
     public static List<Box_File__c> getBoxFiles(Id recordId){
 
         return [
