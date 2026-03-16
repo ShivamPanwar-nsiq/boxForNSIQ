@@ -1,0 +1,63 @@
+<template>
+
+    <lightning-card title="Multi Connector Integration">
+
+        <div class="slds-p-around_medium">
+
+            <div class="slds-grid slds-wrap">
+
+                <div class="slds-col slds-size_1-of-2 slds-p-bottom_small">
+                    <lightning-input
+                        type="checkbox"
+                        label="Box"
+                        data-value="box"
+                        checked={boxChecked}
+                        onchange={handleChange}>
+                    </lightning-input>
+                </div>
+
+                <div class="slds-col slds-size_1-of-2 slds-p-bottom_small">
+                    <lightning-input
+                        type="checkbox"
+                        label="SharePoint"
+                        data-value="sharepoint"
+                        checked={sharepointChecked}
+                        onchange={handleChange}>
+                    </lightning-input>
+                </div>
+
+                <div class="slds-col slds-size_1-of-2 slds-p-bottom_small">
+                    <lightning-input
+                        type="checkbox"
+                        label="Google Drive"
+                        data-value="google"
+                        checked={googleChecked}
+                        onchange={handleChange}>
+                    </lightning-input>
+                </div>
+
+                <div class="slds-col slds-size_1-of-2 slds-p-bottom_small">
+                    <lightning-input
+                        type="checkbox"
+                        label="Dropbox"
+                        data-value="dropbox"
+                        checked={dropboxChecked}
+                        onchange={handleChange}>
+                    </lightning-input>
+                </div>
+
+            </div>
+
+            <br/>
+
+            <lightning-button
+                label="Save Selection"
+                variant="brand"
+                onclick={saveSelection}>
+            </lightning-button>
+
+        </div>
+
+    </lightning-card>
+
+</template>

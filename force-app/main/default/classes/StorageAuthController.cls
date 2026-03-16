@@ -6,18 +6,34 @@ public with sharing class StorageAuthController {
         Auth__c setting = Auth__c.getOrgDefaults();
 
         if(setting == null){
-
             setting = new Auth__c();
             setting.SetupOwnerId = UserInfo.getOrganizationId();
-
         }
 
-        setting.Box__c = (storageType == 'box');
-        setting.Google_Drive__c = (storageType == 'google');
-        setting.Dropbox__c = (storageType == 'dropbox');
+        // Reset all connectors
+        setting.Box__c = false;
+        setting.Google_Drive__c = false;
+        setting.Dropbox__c = false;
+        setting.SharePoint__c = false;
+
+        // Enable selected connector
+        if(storageType == 'box'){
+            setting.Box__c = true;
+        }
+
+        if(storageType == 'google'){
+            setting.Google_Drive__c = true;
+        }
+
+        if(storageType == 'dropbox'){
+            setting.Dropbox__c = true;
+        }
+
+        if(storageType == 'sharepoint'){
+            setting.SharePoint__c = true;
+        }
 
         upsert setting;
-
     }
 
 
@@ -40,6 +56,10 @@ public with sharing class StorageAuthController {
 
         if(setting.Dropbox__c){
             return 'dropbox';
+        }
+
+        if(setting.SharePoint__c){
+            return 'sharepoint';
         }
 
         return null;

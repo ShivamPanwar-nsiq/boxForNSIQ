@@ -46,10 +46,10 @@ export default class AddFileComponent extends LightningElement {
 
     handleUploadComplete(){
         this.showUpload = false;
-        //this.loadItems();
+
         setTimeout(() => {
-        this.loadItems();
-    }, 800);
+            this.loadItems();
+        }, 800);
     }
 
     loadItems(){
@@ -93,7 +93,6 @@ export default class AddFileComponent extends LightningElement {
         const type = event.target.dataset.type;
         const checked = event.target.checked;
 
-        // Folder checkbox
         if(type === 'folder'){
 
             if(checked){
@@ -158,7 +157,6 @@ export default class AddFileComponent extends LightningElement {
             return;
         }
 
-        // File checkbox
         if(type === 'file'){
 
             if(checked){
@@ -248,29 +246,58 @@ export default class AddFileComponent extends LightningElement {
             return;
         }
 
+        this.isLoading = true;
+
         saveBoxFiles({ files:selectedFiles })
         .then((result)=>{
 
-            this.selectedMap = {};
+            this.isLoading = false;
+
+            let toastTitle = 'Success';
+            let toastVariant = 'success';
+
+            if(result && result.toLowerCase().includes('duplicate')){
+
+                toastTitle = 'Error';
+                toastVariant = 'error';
+
+                // Clear selections
+                this.selectedMap = {};
+
+                // Uncheck all checkboxes
+                this.items = this.items.map(item => {
+                    return { ...item, checked:false };
+                });
+
+            } else {
+
+                // If success clear selection also
+                this.selectedMap = {};
+                this.items = this.items.map(item => {
+                    return { ...item, checked:false };
+                });
+
+            }
 
             this.dispatchEvent(
                 new ShowToastEvent({
-                    title:'Success',
+                    title: toastTitle,
                     message: result,
-                    variant:'success'
+                    variant: toastVariant
                 })
             );
 
-            //this.dispatchEvent(new CustomEvent('filessaved'));
             this.dispatchEvent(
-    new CustomEvent('filessaved', {
-        bubbles: true,
-        composed: true
-    })
-);
+                new CustomEvent('filessaved',{
+                    bubbles:true,
+                    composed:true
+                })
+            );
 
         })
         .catch(error=>{
+
+            this.isLoading = false;
 
             this.dispatchEvent(
                 new ShowToastEvent({
