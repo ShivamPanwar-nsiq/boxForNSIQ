@@ -1,0 +1,29 @@
+<template>
+    <section class="admin-shell">
+        <div class="admin-hero">
+            <div>
+                <p class="eyebrow">Admin OAuth Setup</p>
+                <h1>Shared Client Credentials</h1>
+                <p class="subtitle">Each connector uses provider-hosted OAuth pages. Admin only stores Client ID and Client Secret once.</p>
+            </div>
+        </div>
+
+        <lightning-card>
+            <div class="admin-grid">
+                <div class="form-panel">
+                    <lightning-combobox label="Connector" value={form.connectorDeveloperName} data-field="connectorDeveloperName" options={connectorOptions} onchange={handleFieldChange}></lightning-combobox>
+                    <lightning-input label="Client ID" value={form.clientId} data-field="clientId" onchange={handleFieldChange}></lightning-input>
+                    <lightning-input type="password" label="Client Secret" value={form.clientSecret} data-field="clientSecret" onchange={handleFieldChange}></lightning-input>
+                    <div class="actions">
+                        <lightning-button variant="brand" label="Save" onclick={saveCredential}></lightning-button>
+                        <lightning-button label="Reset" onclick={resetForm}></lightning-button>
+                    </div>
+                </div>
+
+                <div class="list-panel">
+                    <lightning-datatable key-field="developerName" data={configs} columns={columns} hide-checkbox-column onrowaction={handleRowAction}></lightning-datatable>
+                </div>
+            </div>
+        </lightning-card>
+    </section>
+</template>

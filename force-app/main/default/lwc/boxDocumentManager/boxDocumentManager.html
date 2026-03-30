@@ -4,20 +4,7 @@
 
     <div class="slds-grid slds-align_absolute-center slds-p-around_small">
 
-        <div class="slds-col slds-size_1-of-3 slds-align_absolute-center">
-
-            <lightning-combobox
-                name="storage"
-                label="Select Storage"
-                value={selectedStorage}
-                placeholder="Select Storage"
-                options={storageOptions}
-                onchange={handleStorageChange}>
-            </lightning-combobox>
-
-        </div>
-
-        <div class="slds-col slds-size_1-of-3 slds-text-align_right">
+        <div class="slds-col slds-size_1-of-1 slds-text-align_right">
 
             <lightning-button
                 label={addFileLabel}
@@ -76,6 +63,7 @@
 
             <div class="slds-modal__content slds-p-around_medium">
 
+                <!-- BOX -->
                 <template if:true={isBox}>
 
                     <c-add-file-component
@@ -86,12 +74,19 @@
 
                 </template>
 
+                <!-- GOOGLE -->
                 <template if:true={isGoogle}>
                     <p>Google Drive Integration Coming Soon</p>
                 </template>
 
+                <!-- DROPBOX -->
                 <template if:true={isDropbox}>
                     <p>Dropbox Integration Coming Soon</p>
+                </template>
+
+                <!-- SHAREPOINT -->
+                <template if:true={isSharepoint}>
+                    <p>SharePoint Integration Coming Soon</p>
                 </template>
 
             </div>

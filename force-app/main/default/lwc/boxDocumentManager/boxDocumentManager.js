@@ -1,7 +1,6 @@
 import { LightningElement, track, api } from 'lwc';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 
-import updateStorageSelection from '@salesforce/apex/StorageAuthController.updateStorageSelection';
 import getSelectedStorage from '@salesforce/apex/StorageAuthController.getSelectedStorage';
 
 import isBoxAuthenticated from '@salesforce/apex/BoxService.isBoxAuthenticated';
@@ -17,12 +16,6 @@ export default class BoxDocumentManager extends LightningElement {
 
     selectedStorage = '';
     isAuthCompleted = false;
-
-    storageOptions = [
-        { label: 'Box', value: 'box' },
-        { label: 'Google Drive', value: 'google' },
-        { label: 'Dropbox', value: 'dropbox' }
-    ];
 
     connectedCallback() {
         this.loadStorage();
@@ -42,6 +35,16 @@ export default class BoxDocumentManager extends LightningElement {
                 }
 
                 this.loadFiles();
+            }
+
+            else{
+
+                this.showToast(
+                    'Storage Not Configured',
+                    'Please configure storage in Multi Connector Setting',
+                    'warning'
+                );
+
             }
 
         })
@@ -75,26 +78,22 @@ export default class BoxDocumentManager extends LightningElement {
         }
 
         else if(this.selectedStorage === 'google'){
-
-            // future google integration
             this.files = [];
-
         }
 
         else if(this.selectedStorage === 'dropbox'){
-
-            // future dropbox integration
             this.files = [];
+        }
 
+        else if(this.selectedStorage === 'sharepoint'){
+            this.files = [];
         }
 
     }
 
     handleFilesSaved(){
-
         this.showModal = false;
         this.loadFiles();
-
     }
 
     checkBoxAuth(){
@@ -121,22 +120,6 @@ export default class BoxDocumentManager extends LightningElement {
 
     }
 
-    handleStorageChange(event){
-
-        this.selectedStorage = event.detail.value;
-
-        updateStorageSelection({
-            storageType: this.selectedStorage
-        });
-
-        if(this.selectedStorage === 'box'){
-            this.checkBoxAuth();
-        }
-
-        this.loadFiles();
-
-    }
-
     get addFileLabel(){
 
         if(!this.selectedStorage){
@@ -152,10 +135,11 @@ export default class BoxDocumentManager extends LightningElement {
         const map = {
             box : 'Selected Box Files',
             google : 'Selected Google Drive Files',
-            dropbox : 'Selected Dropbox Files'
+            dropbox : 'Selected Dropbox Files',
+            sharepoint : 'Selected SharePoint Files'
         };
 
-        return map[this.selectedStorage];
+        return map[this.selectedStorage] || 'Files';
 
     }
 
@@ -174,10 +158,11 @@ export default class BoxDocumentManager extends LightningElement {
         const map = {
             box : 'Box',
             google : 'Google Drive',
-            dropbox : 'Dropbox'
+            dropbox : 'Dropbox',
+            sharepoint : 'SharePoint'
         };
 
-        return map[this.selectedStorage];
+        return map[this.selectedStorage] || 'Storage';
 
     }
 
@@ -191,6 +176,10 @@ export default class BoxDocumentManager extends LightningElement {
 
     get isDropbox(){
         return this.selectedStorage === 'dropbox';
+    }
+
+    get isSharepoint(){
+        return this.selectedStorage === 'sharepoint';
     }
 
     openModal(){
